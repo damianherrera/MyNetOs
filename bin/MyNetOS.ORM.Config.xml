@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<mynetos-orm>
+	<provider-factory caching="true">
+		<property name="connection-string">server=MyServer;database=MyDatabase;uid=MyUsername;pwd=MyPassword;</property>
+		<property name="connection-timeout">60</property>
+		<property name="provider-class">SQLProvider</property>
+
+		<mappings>
+			<mapping assembly="Model.BusinessEntities" namespace="Model.BusinessEntities" />
+		</mappings>
+	</provider-factory>
+	<validator-factory>
+		<property name="validator">MyNetOS.ORM.Validator.Validator, MyNetOS.ORM</property>
+		<property name="validator-summary">MyNetOS.ORM.Validator.ValidatorSummary, MyNetOS.ORM</property>
+		<property name="validator-globalizationtext">YourEnterprise.YourAssembly.YourGlobalizationTextProvider, YourEnterprise.YourAssembly</property>
+	</validator-factory>
+</mynetos-orm>
+

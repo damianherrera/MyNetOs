@@ -1,0 +1,81 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+MyNetOS.ORM
+</name>
+</assembly>
+<members>
+<member name="M:MyNetOS.ORM.Misc.Utilities.CopyObject(System.Object,System.Object)">
+	<summary>
+ Genera una nueva instancia del objeto origen en la referencia del objeto destino sin conservar las referencias en las asociaciones.
+ </summary>
+	<param name="pObjectSrc"></param>
+	<param name="pObjectDest"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.Misc.Utilities.CloneObject(System.Object,System.Object)">
+	<summary>
+ Genera una nueva instancia del objeto origen en la referencia del objeto destino conservando las referencias en las asociaciones.
+ </summary>
+	<param name="pObjectSrc"></param>
+	<param name="pObjectDest"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.ORMHelper.ReplicateSave(System.Object)">
+	<summary>
+ Tiene la misma funcionalidad que Save excepto que no persiste en cache. 
+ Solo sirve para hacer Saves sin cache. Ideal para operaciones remotas.
+ </summary>
+	<param name="pObject"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.ORMHelper.ReplicateUpdate(System.Object)">
+	<summary>
+ Tiene la misma funcionalidad que Update excepto que no persiste en cache. 
+ Solo sirve para hacer Update sin cache. Ideal para operaciones remotas.
+ </summary>
+	<param name="pObject"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.ORMHelper.ReplicateDelete(System.Object)">
+	<summary>
+ Tiene la misma funcionalidad que Delete excepto que no persiste en cache. 
+ Solo sirve para hacer Delete sin cache. Ideal para operaciones remotas.
+ </summary>
+	<param name="pObject"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.Dynamic.ObjectHelper.CreateInstance(System.Object)">
+	<summary>
+ Crea una instancia a partir de un CloneObject
+ </summary>
+	<param name="pObject"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.Dynamic.ObjectHelper.CreateInstance(System.Type)">
+	<summary>
+ Creo el tipo, pero no puedo guardarlo en cache por falta de PrimaryKey
+ </summary>
+	<param name="pType"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.ORM.Dynamic.ObjectHelper.CreateInstance(System.Reflection.Assembly,System.String)">
+	<summary>
+ Creo el tipo, pero no puedo guardarlo en cache por falta de PrimaryKey
+ </summary>
+	<param name="pAssembly"></param>
+	<param name="pFullName"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="P:MyNetOS.ORM.My.Resources.Resources.ResourceManager">
+	<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member><member name="P:MyNetOS.ORM.My.Resources.Resources.Culture">
+	<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member><member name="T:MyNetOS.ORM.My.Resources.Resources">
+	<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+</members>
+</doc>

@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.civinext.com/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://www.civinext.com/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://www.civinext.com/">
+      <s:import namespace="http://www.w3.org/2001/XMLSchema" />
+      <s:element name="CloseIDBConnection">
+        <s:complexType />
+      </s:element>
+      <s:element name="CloseIDBConnectionResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="ClearIDBConnection">
+        <s:complexType />
+      </s:element>
+      <s:element name="ClearIDBConnectionResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="DisposeIDBConnection">
+        <s:complexType />
+      </s:element>
+      <s:element name="DisposeIDBConnectionResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetIDBConnectionKey">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetIDBConnectionKeyResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetIDBConnectionKeyResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetSQLParameters">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="pProcedureName" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetSQLParametersResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetSQLParametersResult" type="tns:ArrayOfSqlParameter" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfSqlParameter">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="SqlParameter" nillable="true" type="tns:SqlParameter" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="SqlParameter">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:DbParameter">
+            <s:sequence>
+              <s:element minOccurs="1" maxOccurs="1" name="CompareInfo" type="tns:SqlCompareOptions" />
+              <s:element minOccurs="0" maxOccurs="1" name="XmlSchemaCollectionDatabase" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="XmlSchemaCollectionOwningSchema" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="XmlSchemaCollectionName" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="LocaleId" type="s:int" />
+              <s:element minOccurs="0" maxOccurs="1" default="0" name="Precision" type="s:unsignedByte" />
+              <s:element minOccurs="0" maxOccurs="1" default="0" name="Scale" type="s:unsignedByte" />
+              <s:element minOccurs="1" maxOccurs="1" name="SqlDbType" type="tns:SqlDbType" />
+              <s:element minOccurs="0" maxOccurs="1" name="SqlValue" />
+              <s:element minOccurs="0" maxOccurs="1" name="UdtTypeName" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="TypeName" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="Offset" type="s:int" />
+            </s:sequence>
+          </s:extension>
+        </s:complexContent>
+      </s:complexType>
+      <s:complexType name="DbParameter" abstract="true">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:MarshalByRefObject">
+            <s:sequence>
+              <s:element minOccurs="1" maxOccurs="1" name="DbType" type="tns:DbType" />
+              <s:element minOccurs="0" maxOccurs="1" default="Input" name="Direction" type="tns:ParameterDirection" />
+              <s:element minOccurs="1" maxOccurs="1" name="IsNullable" type="s:boolean" />
+              <s:element minOccurs="0" maxOccurs="1" default="" name="ParameterName" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="Size" type="s:int" />
+              <s:element minOccurs="0" maxOccurs="1" default="" name="SourceColumn" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" default="false" name="SourceColumnNullMapping" type="s:boolean" />
+              <s:element minOccurs="0" maxOccurs="1" default="Current" name="SourceVersion" type="tns:DataRowVersion" />
+              <s:element minOccurs="0" maxOccurs="1" name="Value" />
+            </s:sequence>
+          </s:extension>
+        </s:complexContent>
+      </s:complexType>
+      <s:complexType name="MarshalByRefObject" abstract="true" />
+      <s:simpleType name="DbType">
+        <s:restriction base="s:string">
+          <s:enumeration value="AnsiString" />
+          <s:enumeration value="Binary" />
+          <s:enumeration value="Byte" />
+          <s:enumeration value="Boolean" />
+          <s:enumeration value="Currency" />
+          <s:enumeration value="Date" />
+          <s:enumeration value="DateTime" />
+          <s:enumeration value="Decimal" />
+          <s:enumeration value="Double" />
+          <s:enumeration value="Guid" />
+          <s:enumeration value="Int16" />
+          <s:enumeration value="Int32" />
+          <s:enumeration value="Int64" />
+          <s:enumeration value="Object" />
+          <s:enumeration value="SByte" />
+          <s:enumeration value="Single" />
+          <s:enumeration value="String" />
+          <s:enumeration value="Time" />
+          <s:enumeration value="UInt16" />
+          <s:enumeration value="UInt32" />
+          <s:enumeration value="UInt64" />
+          <s:enumeration value="VarNumeric" />
+          <s:enumeration value="AnsiStringFixedLength" />
+          <s:enumeration value="StringFixedLength" />
+          <s:enumeration value="Xml" />
+          <s:enumeration value="DateTime2" />
+          <s:enumeration value="DateTimeOffset" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="ParameterDirection">
+        <s:restriction base="s:string">
+          <s:enumeration value="Input" />
+          <s:enumeration value="Output" />
+          <s:enumeration value="InputOutput" />
+          <s:enumeration value="ReturnValue" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="DataRowVersion">
+        <s:restriction base="s:string">
+          <s:enumeration value="Original" />
+          <s:enumeration value="Current" />
+          <s:enumeration value="Proposed" />
+          <s:enumeration value="Default" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="SqlCompareOptions">
+        <s:list>
+          <s:simpleType>
+            <s:restriction base="s:string">
+              <s:enumeration value="None" />
+              <s:enumeration value="IgnoreCase" />
+              <s:enumeration value="IgnoreNonSpace" />
+              <s:enumeration value="IgnoreKanaType" />
+              <s:enumeration value="IgnoreWidth" />
+              <s:enumeration value="BinarySort" />
+              <s:enumeration value="BinarySort2" />
+            </s:restriction>
+          </s:simpleType>
+        </s:list>
+      </s:simpleType>
+      <s:simpleType name="SqlDbType">
+        <s:restriction base="s:string">
+          <s:enumeration value="BigInt" />
+          <s:enumeration value="Binary" />
+          <s:enumeration value="Bit" />
+          <s:enumeration value="Char" />
+          <s:enumeration value="DateTime" />
+          <s:enumeration value="Decimal" />
+          <s:enumeration value="Float" />
+          <s:enumeration value="Image" />
+          <s:enumeration value="Int" />
+          <s:enumeration value="Money" />
+          <s:enumeration value="NChar" />
+          <s:enumeration value="NText" />
+          <s:enumeration value="NVarChar" />
+          <s:enumeration value="Real" />
+          <s:enumeration value="UniqueIdentifier" />
+          <s:enumeration value="SmallDateTime" />
+          <s:enumeration value="SmallInt" />
+          <s:enumeration value="SmallMoney" />
+          <s:enumeration value="Text" />
+          <s:enumeration value="Timestamp" />
+          <s:enumeration value="TinyInt" />
+          <s:enumeration value="VarBinary" />
+          <s:enumeration value="VarChar" />
+          <s:enumeration value="Variant" />
+          <s:enumeration value="Xml" />
+          <s:enumeration value="Udt" />
+          <s:enumeration value="Structured" />
+          <s:enumeration value="Date" />
+          <s:enumeration value="Time" />
+          <s:enumeration value="DateTime2" />
+          <s:enumeration value="DateTimeOffset" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="BeginTransaction0">
+        <s:complexType />
+      </s:element>
+      <s:element name="BeginTransaction0Response">
+        <s:complexType />
+      </s:element>
+      <s:element name="BeginTransaction1">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pIsolationLevel" type="tns:IsolationLevel" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:simpleType name="IsolationLevel">
+        <s:restriction base="s:string">
+          <s:enumeration value="Unspecified" />
+          <s:enumeration value="Chaos" />
+          <s:enumeration value="ReadUncommitted" />
+          <s:enumeration value="ReadCommitted" />
+          <s:enumeration value="RepeatableRead" />
+          <s:enumeration value="Serializable" />
+          <s:enumeration value="Snapshot" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="BeginTransaction1Response">
+        <s:complexType />
+      </s:element>
+      <s:element name="CommitTransaction">
+        <s:complexType />
+      </s:element>
+      <s:element name="CommitTransactionResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="RollbackTransaction">
+        <s:complexType />
+      </s:element>
+      <s:element name="RollbackTransactionResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetSavePointName">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetSavePointNameResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetSavePointNameResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="TransactionExists">
+        <s:complexType />
+      </s:element>
+      <s:element name="TransactionExistsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="TransactionExistsResult" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteDataset">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pCommandType" type="tns:CommandType" />
+            <s:element minOccurs="0" maxOccurs="1" name="pCommandText" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="pParameterCollection">
+              <s:complexType>
+                <s:sequence>
+                  <s:element ref="s:schema" />
+                  <s:any />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:simpleType name="CommandType">
+        <s:restriction base="s:string">
+          <s:enumeration value="Text" />
+          <s:enumeration value="StoredProcedure" />
+          <s:enumeration value="TableDirect" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="ExecuteDatasetResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="ExecuteDatasetResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:element ref="s:schema" />
+                  <s:any />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteNonQuery">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pCommandType" type="tns:CommandType" />
+            <s:element minOccurs="0" maxOccurs="1" name="pCommandText" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="pParameterCollection">
+              <s:complexType>
+                <s:sequence>
+                  <s:element ref="s:schema" />
+                  <s:any />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteNonQueryResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="ExecuteNonQueryResult" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteScalar">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pCommandType" type="tns:CommandType" />
+            <s:element minOccurs="0" maxOccurs="1" name="pCommandText" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="pParameterCollection">
+              <s:complexType>
+                <s:sequence>
+                  <s:element ref="s:schema" />
+                  <s:any />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteScalarResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="ExecuteScalarResult" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDatatableSchema">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="pTableName" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDatatableSchemaResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDatatableSchemaResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="CloseIDBConnectionSoapIn">
+    <wsdl:part name="parameters" element="tns:CloseIDBConnection" />
+  </wsdl:message>
+  <wsdl:message name="CloseIDBConnectionSoapOut">
+    <wsdl:part name="parameters" element="tns:CloseIDBConnectionResponse" />
+  </wsdl:message>
+  <wsdl:message name="ClearIDBConnectionSoapIn">
+    <wsdl:part name="parameters" element="tns:ClearIDBConnection" />
+  </wsdl:message>
+  <wsdl:message name="ClearIDBConnectionSoapOut">
+    <wsdl:part name="parameters" element="tns:ClearIDBConnectionResponse" />
+  </wsdl:message>
+  <wsdl:message name="DisposeIDBConnectionSoapIn">
+    <wsdl:part name="parameters" element="tns:DisposeIDBConnection" />
+  </wsdl:message>
+  <wsdl:message name="DisposeIDBConnectionSoapOut">
+    <wsdl:part name="parameters" element="tns:DisposeIDBConnectionResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetIDBConnectionKeySoapIn">
+    <wsdl:part name="parameters" element="tns:GetIDBConnectionKey" />
+  </wsdl:message>
+  <wsdl:message name="GetIDBConnectionKeySoapOut">
+    <wsdl:part name="parameters" element="tns:GetIDBConnectionKeyResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetSQLParametersSoapIn">
+    <wsdl:part name="parameters" element="tns:GetSQLParameters" />
+  </wsdl:message>
+  <wsdl:message name="GetSQLParametersSoapOut">
+    <wsdl:part name="parameters" element="tns:GetSQLParametersResponse" />
+  </wsdl:message>
+  <wsdl:message name="BeginTransaction0SoapIn">
+    <wsdl:part name="parameters" element="tns:BeginTransaction0" />
+  </wsdl:message>
+  <wsdl:message name="BeginTransaction0SoapOut">
+    <wsdl:part name="parameters" element="tns:BeginTransaction0Response" />
+  </wsdl:message>
+  <wsdl:message name="BeginTransaction1SoapIn">
+    <wsdl:part name="parameters" element="tns:BeginTransaction1" />
+  </wsdl:message>
+  <wsdl:message name="BeginTransaction1SoapOut">
+    <wsdl:part name="parameters" element="tns:BeginTransaction1Response" />
+  </wsdl:message>
+  <wsdl:message name="CommitTransactionSoapIn">
+    <wsdl:part name="parameters" element="tns:CommitTransaction" />
+  </wsdl:message>
+  <wsdl:message name="CommitTransactionSoapOut">
+    <wsdl:part name="parameters" element="tns:CommitTransactionResponse" />
+  </wsdl:message>
+  <wsdl:message name="RollbackTransactionSoapIn">
+    <wsdl:part name="parameters" element="tns:RollbackTransaction" />
+  </wsdl:message>
+  <wsdl:message name="RollbackTransactionSoapOut">
+    <wsdl:part name="parameters" element="tns:RollbackTransactionResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetSavePointNameSoapIn">
+    <wsdl:part name="parameters" element="tns:GetSavePointName" />
+  </wsdl:message>
+  <wsdl:message name="GetSavePointNameSoapOut">
+    <wsdl:part name="parameters" element="tns:GetSavePointNameResponse" />
+  </wsdl:message>
+  <wsdl:message name="TransactionExistsSoapIn">
+    <wsdl:part name="parameters" element="tns:TransactionExists" />
+  </wsdl:message>
+  <wsdl:message name="TransactionExistsSoapOut">
+    <wsdl:part name="parameters" element="tns:TransactionExistsResponse" />
+  </wsdl:message>
+  <wsdl:message name="ExecuteDatasetSoapIn">
+    <wsdl:part name="parameters" element="tns:ExecuteDataset" />
+  </wsdl:message>
+  <wsdl:message name="ExecuteDatasetSoapOut">
+    <wsdl:part name="parameters" element="tns:ExecuteDatasetResponse" />
+  </wsdl:message>
+  <wsdl:message name="ExecuteNonQuerySoapIn">
+    <wsdl:part name="parameters" element="tns:ExecuteNonQuery" />
+  </wsdl:message>
+  <wsdl:message name="ExecuteNonQuerySoapOut">
+    <wsdl:part name="parameters" element="tns:ExecuteNonQueryResponse" />
+  </wsdl:message>
+  <wsdl:message name="ExecuteScalarSoapIn">
+    <wsdl:part name="parameters" element="tns:ExecuteScalar" />
+  </wsdl:message>
+  <wsdl:message name="ExecuteScalarSoapOut">
+    <wsdl:part name="parameters" element="tns:ExecuteScalarResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDatatableSchemaSoapIn">
+    <wsdl:part name="parameters" element="tns:GetDatatableSchema" />
+  </wsdl:message>
+  <wsdl:message name="GetDatatableSchemaSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDatatableSchemaResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ServiceProviderSoap">
+    <wsdl:operation name="CloseIDBConnection">
+      <wsdl:input message="tns:CloseIDBConnectionSoapIn" />
+      <wsdl:output message="tns:CloseIDBConnectionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ClearIDBConnection">
+      <wsdl:input message="tns:ClearIDBConnectionSoapIn" />
+      <wsdl:output message="tns:ClearIDBConnectionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="DisposeIDBConnection">
+      <wsdl:input message="tns:DisposeIDBConnectionSoapIn" />
+      <wsdl:output message="tns:DisposeIDBConnectionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetIDBConnectionKey">
+      <wsdl:input message="tns:GetIDBConnectionKeySoapIn" />
+      <wsdl:output message="tns:GetIDBConnectionKeySoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSQLParameters">
+      <wsdl:input message="tns:GetSQLParametersSoapIn" />
+      <wsdl:output message="tns:GetSQLParametersSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="BeginTransaction0">
+      <wsdl:input message="tns:BeginTransaction0SoapIn" />
+      <wsdl:output message="tns:BeginTransaction0SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="BeginTransaction1">
+      <wsdl:input message="tns:BeginTransaction1SoapIn" />
+      <wsdl:output message="tns:BeginTransaction1SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="CommitTransaction">
+      <wsdl:input message="tns:CommitTransactionSoapIn" />
+      <wsdl:output message="tns:CommitTransactionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RollbackTransaction">
+      <wsdl:input message="tns:RollbackTransactionSoapIn" />
+      <wsdl:output message="tns:RollbackTransactionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSavePointName">
+      <wsdl:input message="tns:GetSavePointNameSoapIn" />
+      <wsdl:output message="tns:GetSavePointNameSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="TransactionExists">
+      <wsdl:input message="tns:TransactionExistsSoapIn" />
+      <wsdl:output message="tns:TransactionExistsSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteDataset">
+      <wsdl:input message="tns:ExecuteDatasetSoapIn" />
+      <wsdl:output message="tns:ExecuteDatasetSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteNonQuery">
+      <wsdl:input message="tns:ExecuteNonQuerySoapIn" />
+      <wsdl:output message="tns:ExecuteNonQuerySoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteScalar">
+      <wsdl:input message="tns:ExecuteScalarSoapIn" />
+      <wsdl:output message="tns:ExecuteScalarSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDatatableSchema">
+      <wsdl:input message="tns:GetDatatableSchemaSoapIn" />
+      <wsdl:output message="tns:GetDatatableSchemaSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServiceProviderSoap" type="tns:ServiceProviderSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="CloseIDBConnection">
+      <soap:operation soapAction="http://www.civinext.com/CloseIDBConnection" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ClearIDBConnection">
+      <soap:operation soapAction="http://www.civinext.com/ClearIDBConnection" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DisposeIDBConnection">
+      <soap:operation soapAction="http://www.civinext.com/DisposeIDBConnection" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetIDBConnectionKey">
+      <soap:operation soapAction="http://www.civinext.com/GetIDBConnectionKey" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSQLParameters">
+      <soap:operation soapAction="http://www.civinext.com/GetSQLParameters" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="BeginTransaction0">
+      <soap:operation soapAction="http://www.civinext.com/BeginTransaction0" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="BeginTransaction1">
+      <soap:operation soapAction="http://www.civinext.com/BeginTransaction1" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CommitTransaction">
+      <soap:operation soapAction="http://www.civinext.com/CommitTransaction" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollbackTransaction">
+      <soap:operation soapAction="http://www.civinext.com/RollbackTransaction" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSavePointName">
+      <soap:operation soapAction="http://www.civinext.com/GetSavePointName" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="TransactionExists">
+      <soap:operation soapAction="http://www.civinext.com/TransactionExists" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteDataset">
+      <soap:operation soapAction="http://www.civinext.com/ExecuteDataset" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteNonQuery">
+      <soap:operation soapAction="http://www.civinext.com/ExecuteNonQuery" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteScalar">
+      <soap:operation soapAction="http://www.civinext.com/ExecuteScalar" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDatatableSchema">
+      <soap:operation soapAction="http://www.civinext.com/GetDatatableSchema" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServiceProviderSoap12" type="tns:ServiceProviderSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="CloseIDBConnection">
+      <soap12:operation soapAction="http://www.civinext.com/CloseIDBConnection" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ClearIDBConnection">
+      <soap12:operation soapAction="http://www.civinext.com/ClearIDBConnection" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DisposeIDBConnection">
+      <soap12:operation soapAction="http://www.civinext.com/DisposeIDBConnection" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetIDBConnectionKey">
+      <soap12:operation soapAction="http://www.civinext.com/GetIDBConnectionKey" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSQLParameters">
+      <soap12:operation soapAction="http://www.civinext.com/GetSQLParameters" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="BeginTransaction0">
+      <soap12:operation soapAction="http://www.civinext.com/BeginTransaction0" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="BeginTransaction1">
+      <soap12:operation soapAction="http://www.civinext.com/BeginTransaction1" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CommitTransaction">
+      <soap12:operation soapAction="http://www.civinext.com/CommitTransaction" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollbackTransaction">
+      <soap12:operation soapAction="http://www.civinext.com/RollbackTransaction" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSavePointName">
+      <soap12:operation soapAction="http://www.civinext.com/GetSavePointName" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="TransactionExists">
+      <soap12:operation soapAction="http://www.civinext.com/TransactionExists" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteDataset">
+      <soap12:operation soapAction="http://www.civinext.com/ExecuteDataset" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteNonQuery">
+      <soap12:operation soapAction="http://www.civinext.com/ExecuteNonQuery" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteScalar">
+      <soap12:operation soapAction="http://www.civinext.com/ExecuteScalar" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDatatableSchema">
+      <soap12:operation soapAction="http://www.civinext.com/GetDatatableSchema" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ServiceProvider">
+    <wsdl:port name="ServiceProviderSoap" binding="tns:ServiceProviderSoap">
+      <soap:address location="http://back.local.com/publico/serviceprovider.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServiceProviderSoap12" binding="tns:ServiceProviderSoap12">
+      <soap12:address location="http://back.local.com/publico/serviceprovider.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

@@ -1,0 +1,10 @@
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\bin\Debug\MyNetOS.Orm.dll.config
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\bin\Debug\MyNetOS.Orm.dll
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\bin\Debug\MyNetOS.Orm.pdb
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\bin\Debug\log4net.dll
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\bin\Debug\Nullables.dll
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\obj\Debug\MyNetOS.Orm.Resources.resources
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\obj\Debug\MyNetOS.Orm.vbproj.GenerateResource.Cache
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\obj\Debug\MyNetOS.Orm.dll
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\obj\Debug\MyNetOS.Orm.pdb
+D:\MyNetOs\Orm\Aplicacion\MyNetOS.ORM\obj\Debug\MyNetOS.Orm.vbprojResolveAssemblyReference.cache
