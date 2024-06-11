@@ -3,12 +3,14 @@ Public Class ORMModule
   Implements System.Web.IHttpModule
 
 #Region "DISPOSE"
-  Public Sub Dispose() Implements System.Web.IHttpModule.Dispose
-  End Sub
+#Disable Warning S1186 ' Methods should not be empty
+    Public Sub Dispose() Implements System.Web.IHttpModule.Dispose
+#Enable Warning S1186 ' Methods should not be empty
+    End Sub
 #End Region
 
 #Region "INIT"
-  Public Sub Init(ByVal context As System.Web.HttpApplication) Implements System.Web.IHttpModule.Init
+    Public Sub Init(ByVal context As System.Web.HttpApplication) Implements System.Web.IHttpModule.Init
     AddHandler context.BeginRequest, AddressOf ORMModule.BeginRequest
     AddHandler context.EndRequest, AddressOf ORMModule.EndRequest
   End Sub

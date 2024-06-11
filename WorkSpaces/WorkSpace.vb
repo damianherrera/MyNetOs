@@ -40,8 +40,8 @@ Namespace WorkSpaces
 			Get
 				Return CacheHelper.Item(SessionId & "_" & pKey)
 			End Get
-			Set(ByVal Value As Object)
-				CacheHelper.Item(SessionId & "_" & pKey, pSlidingExpirationMinutes, pExpirationDate, SessionId) = Value
+			Set(ByVal value As Object)
+				CacheHelper.Item(SessionId & "_" & pKey, pSlidingExpirationMinutes, pExpirationDate, SessionId) = value
 			End Set
 		End Property
 #End Region
@@ -52,8 +52,8 @@ Namespace WorkSpaces
 			Get
 				Return CacheHelper.Item(pKey)
 			End Get
-			Set(ByVal Value As Object)
-				CacheHelper.Item(pKey, pSlidingExpirationMinutes, pExpirationDate) = Value
+			Set(ByVal value As Object)
+				CacheHelper.Item(pKey, pSlidingExpirationMinutes, pExpirationDate) = value
 			End Set
 		End Property
 #End Region

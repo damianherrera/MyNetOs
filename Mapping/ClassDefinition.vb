@@ -17,6 +17,9 @@ Public Class ClassDefinition
 	Private mOldVersionParameter As String
 	Private mDeletedProperty As String
 
+	Private mHashcodeable As Boolean
+	Private mHashcode As String
+
 	Private mProcedures As SerializableDictionary(Of ACTION, ProcedureDefinition)
 	Private mUserProcedures As SerializableDictionary(Of String, UserProcedureDefinition)
 	Private mAsociations As SerializableDictionary(Of String, AsociationDefinition)
@@ -120,6 +123,21 @@ Public Class ClassDefinition
 		End Get
 		Set(ByVal value As String)
 			mDeletedProperty = value
+		End Set
+	End Property
+
+	Public ReadOnly Property Hashcodeable() As Boolean
+		Get
+			Return mHashcodeable
+		End Get
+	End Property
+
+	Public Property Hashcode() As String
+		Get
+			Return mHashcode
+		End Get
+		Set(ByVal value As String)
+			mHashcode = value
 		End Set
 	End Property
 
@@ -255,6 +273,17 @@ Public Class ClassDefinition
 			mOldVersionParameter = Nothing
 			mVersionable = False
 			mVersionValidatable = False
+		End If
+
+		If pXmlNode.SelectSingleNode("hashcode") IsNot Nothing Then
+			mHashcode = pXmlNode.SelectSingleNode("hashcode").Attributes("name").Value
+			mHashcodeable = True
+
+			Dim mProperty As New PropertyDefinition(pXmlNode.SelectSingleNode("hashcode"))
+			mProperties.Add(mProperty.Name, mProperty)
+		Else
+			mHashcode = Nothing
+			mHashcodeable = False
 		End If
 
 		For Each mAsociationNode As Xml.XmlNode In pXmlNode.SelectNodes("asociation")

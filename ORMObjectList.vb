@@ -22,15 +22,15 @@ Public Class ORMObjectList
 
 #Region "GET XML"
 
-  Public Function GetXML() As String
-    Dim mXML As New Text.StringBuilder
-    mXML.Append("<objectlist>")
-    For Each mKey As String In MyBase.ToArray
-      mXML.Append("<object>" & mKey & "</object>")
-    Next
-    mXML.Append("</objectlist>")
-    Return mXML.ToString
-  End Function
+    Public Function GetXml() As String
+        Dim mXML As New Text.StringBuilder
+        mXML.Append("<objectlist>")
+        For Each mKey As String In MyBase.ToArray
+            mXML.Append("<object>" & mKey & "</object>")
+        Next
+        mXML.Append("</objectlist>")
+        Return mXML.ToString
+    End Function
 #End Region
 
 End Class

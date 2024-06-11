@@ -7,29 +7,29 @@ Imports log4net
 Imports log4net.Config
 
 
-Friend Class SQLProvider
-	Implements IDBProvider
+Friend Class SqlProvider
+	Implements IdbProvider
 
 #Region "FIELDS"
 
 	Private logger As ILog = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType)
-	Private mSQLHelper As ISQLHelper
+	Private mSqlHelper As ISqlHelper
 #End Region
 
 #Region "CONSTRUCTOR"
 
 	Public Sub New()
-		mSQLHelper = CType(New SQLHelper, ISQLHelper)
+		mSqlHelper = CType(New SQLHelper, ISqlHelper)
 	End Sub
 
-	Public Sub New(ByVal pSQLHelper As ISQLHelper)
-		mSQLHelper = pSQLHelper
+	Public Sub New(ByVal pSqlHelper As ISqlHelper)
+		mSqlHelper = pSqlHelper
 	End Sub
 #End Region
 
 #Region "GET ISQL HELPER"
-	Function GetISQLHelper() As ISQLHelper Implements IDBProvider.GetISQLHelper
-		Return mSQLHelper
+	Function GetISqlHelper() As ISqlHelper Implements IdbProvider.GetISqlHelper
+		Return mSqlHelper
 	End Function
 #End Region
 
@@ -73,7 +73,7 @@ Friend Class SQLProvider
 		'End SyncLock
 
 		If mRowsAffected = 0 Then
-			Throw ((New Exception("The object " & pObject.GetType.FullName & " is not saved.")))
+			Throw (New Exception("The object " & pObject.GetType.FullName & " is not saved."))
 		End If
 	End Sub
 #End Region
@@ -126,7 +126,7 @@ Friend Class SQLProvider
 		'End SyncLock
 
 		If mRowsAffected = 0 Then
-			Throw ((New Exception("The object " & pObject.GetType.FullName & " is not updated.")))
+			Throw (New Exception("The object " & pObject.GetType.FullName & " is not updated."))
 		End If
 	End Sub
 #End Region
@@ -180,7 +180,7 @@ Friend Class SQLProvider
 		'End SyncLock
 
 		If mRowsAffected = 0 Then
-			Throw ((New Exception("The object " & pObject.GetType.FullName & " is not deleted.")))
+			Throw (New Exception("The object " & pObject.GetType.FullName & " is not deleted."))
 		End If
 	End Sub
 #End Region
@@ -199,7 +199,7 @@ Friend Class SQLProvider
 		'SyncLock GetIDBConnection()
 		Select Case mProcedure.Type
 			Case PROCEDURE_TYPE.MSSQL_SP
-				Dim mParameterCollection As ParameterCollection = GetCompleteParameterCollection(mProcedure, Nothing)
+				Dim mParameterCollection As ParameterCollection = GetCompleteParameterCollection(mProcedure, pParameterCollection)
 
 				'Actualizo la version del objeto
 				If pClassDefinition.Versionable Then
@@ -256,8 +256,8 @@ Friend Class SQLProvider
 		End Select
 		'End SyncLock
 
-		If Not mDataSet Is Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
-			pObject.GetType.GetProperties()	'Genero los indices de acceso por reflection por defecto
+		If mDataSet IsNot Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
+			pObject.GetType.GetProperties() 'Genero los indices de acceso por reflection por defecto
 			SetStateObject(mDataSet.Tables(0).Rows(0), pObject, pClassDefinition)
 		Else
 			pObject = Nothing
@@ -281,13 +281,13 @@ Friend Class SQLProvider
 			Case PROCEDURE_TYPE.MSSQL_SP
 				Dim mDataSet As DataSet = mSQLHelper.ExecuteDataset(CommandType.StoredProcedure, pProcedure.Value, GetCompleteParameterCollection(pProcedure, pParameterCollection))
 
-				If Not mDataSet Is Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
+				If mDataSet IsNot Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
 
 					mObject = CType(Array.CreateInstance(pObject.GetType, mDataSet.Tables(0).Rows.Count), Object())
 					Dim mCounter As Int32 = 0
 					For Each mDataRow As DataRow In mDataSet.Tables(0).Rows
 						mObject(mCounter) = pObject.GetType.Assembly.CreateInstance(pObject.GetType.FullName)
-						mObject(mCounter).GetType.GetProperties()	'Genero los indices de acceso por reflection por defecto
+						mObject(mCounter).GetType.GetProperties()   'Genero los indices de acceso por reflection por defecto
 						SetStateObject(mDataRow, mObject(mCounter), pClassDefinition)
 						mCounter += 1
 					Next
@@ -297,13 +297,13 @@ Friend Class SQLProvider
 			Case PROCEDURE_TYPE.MSSQL_Text
 				Dim mDataSet As DataSet = mSQLHelper.ExecuteDataset(CommandType.Text, pProcedure.GetQuery(pParameterCollection), GetCompleteParameterCollection(pProcedure, pParameterCollection))
 
-				If Not mDataSet Is Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
+				If mDataSet IsNot Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
 
 					mObject = CType(Array.CreateInstance(pObject.GetType, mDataSet.Tables(0).Rows.Count), Object())
 					Dim mCounter As Int32 = 0
 					For Each mDataRow As DataRow In mDataSet.Tables(0).Rows
 						mObject(mCounter) = pObject.GetType.Assembly.CreateInstance(pObject.GetType.FullName)
-						mObject(mCounter).GetType.GetProperties()	'Genero los indices de acceso por reflection por defecto
+						mObject(mCounter).GetType.GetProperties()   'Genero los indices de acceso por reflection por defecto
 						SetStateObject(mDataRow, mObject(mCounter), pClassDefinition)
 						mCounter += 1
 					Next
@@ -334,14 +334,14 @@ Friend Class SQLProvider
 
 				Dim mDataSet As DataSet = mSQLHelper.ExecuteDataset(CommandType.StoredProcedure, pProcedure.Value, GetCompleteParameterCollection(pProcedure, pParameterCollection))
 				'CloseIDBConnection()
-				If Not mDataSet Is Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
+				If mDataSet IsNot Nothing AndAlso mDataSet.Tables.Count > 0 AndAlso mDataSet.Tables(0).Rows.Count > 0 Then
 
-					Dim mObject() As Object
+					Dim mObject As Object()
 					mObject = CType(Array.CreateInstance(pObject.GetType, mDataSet.Tables(0).Rows.Count), Object())
 					Dim mCounter As Int32 = 0
 					For Each mDataRow As DataRow In mDataSet.Tables(0).Rows
 						mObject(mCounter) = pObject.GetType.Assembly.CreateInstance(pObject.GetType.FullName)
-						mObject(mCounter).GetType.GetProperties()	'Genero los indices de acceso por reflection por defecto
+						mObject(mCounter).GetType.GetProperties()   'Genero los indices de acceso por reflection por defecto
 						SetStateObject(mDataRow, mObject(mCounter), pClassDefinition)
 						mCounter += 1
 					Next
@@ -364,8 +364,8 @@ Friend Class SQLProvider
 #End Region
 
 #Region "GET NEW IDENTITY"
-	Public Function GetNewIdentity(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition) As Int64 Implements IDBProvider.GetNewIdentity
-		Dim mReturnValue As Int64
+	Public Function GetNewIdentity(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition) As Object Implements IDBProvider.GetNewIdentity
+		Dim mReturnValue As Object = Nothing
 		Dim mProcedure As ProcedureDefinition = pClassDefinition.Procedures(ACTION.NEW_IDENTITY)
 
 		'SyncLock GetIDBConnection()
@@ -386,13 +386,13 @@ Friend Class SQLProvider
 					Next
 				End If
 
-				mReturnValue = ConvertHelper.ToInt64(mSQLHelper.ExecuteScalar(CommandType.StoredProcedure, mProcedure.Value, mParameterCollection))
+				mReturnValue = mSQLHelper.ExecuteScalar(CommandType.StoredProcedure, mProcedure.Value, mParameterCollection)
 
 			Case PROCEDURE_TYPE.MSSQL_Text
 				Dim mParameterCollection As ParameterCollection = GetCompleteParameterCollection(mProcedure, Nothing)
 				SetValueParameterCollection(mParameterCollection, pObject, pClassDefinition)
 
-				mReturnValue = ConvertHelper.ToInt64(mSQLHelper.ExecuteScalar(CommandType.Text, mProcedure.Value, mParameterCollection))
+				mReturnValue = mSQLHelper.ExecuteScalar(CommandType.Text, mProcedure.Value, mParameterCollection)
 		End Select
 		'End SyncLock
 
@@ -425,7 +425,7 @@ Friend Class SQLProvider
 					Dim mCounter As Int32 = 0
 					For Each mDataRow As DataRow In mDataSet.Tables(0).Rows
 						mObject(mCounter) = pObject.GetType.Assembly.CreateInstance(pObject.GetType.FullName)
-						mObject(mCounter).GetType.GetProperties()	'Genero los indices de acceso por reflection por defecto
+						mObject(mCounter).GetType.GetProperties()   'Genero los indices de acceso por reflection por defecto
 						SetStateObject(mDataRow, mObject(mCounter), pClassDefinition)
 						mCounter += 1
 					Next
@@ -463,7 +463,7 @@ Friend Class SQLProvider
 					Dim mCounter As Int32 = 0
 					For Each mDataRow As DataRow In mDataSet.Tables(0).Rows
 						mObject(mCounter) = pObject.GetType.Assembly.CreateInstance(pObject.GetType.FullName)
-						mObject(mCounter).GetType.GetProperties()	'Genero los indices de acceso por reflection por defecto
+						mObject(mCounter).GetType.GetProperties()   'Genero los indices de acceso por reflection por defecto
 						SetStateObject(mDataRow, mObject(mCounter), pClassDefinition)
 						mCounter += 1
 					Next
@@ -517,9 +517,9 @@ Friend Class SQLProvider
 
 #Region "EXECUTE SCALAR"
 
-	Public Function ExecuteScalar(ByVal pProcedure As ProcedureDefinition, ByVal pParameterCollection As ParameterCollection) As String Implements IDBProvider.ExecuteScalar
+	Public Function ExecuteScalar(ByVal pProcedure As ProcedureDefinition, ByVal pParameterCollection As ParameterCollection) As Object Implements IDBProvider.ExecuteScalar
 
-		Dim mReturnValue As String = Nothing
+		Dim mReturnValue As Object = Nothing
 		'SyncLock GetIDBConnection()
 		Select Case pProcedure.Type
 			Case PROCEDURE_TYPE.MSSQL_SP
@@ -579,7 +579,7 @@ Friend Class SQLProvider
 
 #Region "EXECUTE SCALAR"
 
-	Public Function ExecuteScalar(ByVal pProcedure As String, ByVal pParameterCollection As ParameterCollection) As String Implements IDBProvider.ExecuteScalar
+	Public Function ExecuteScalar(ByVal pProcedure As String, ByVal pParameterCollection As ParameterCollection) As Object Implements IDBProvider.ExecuteScalar
 
 		'SyncLock GetIDBConnection()
 		If pParameterCollection Is Nothing Then
@@ -606,27 +606,27 @@ Friend Class SQLProvider
 #Region "CONNECTIONS"
 
 #Region "CLEAR I DB CONNECTION"
-	Public Sub ClearIDBConnection() Implements IDBProvider.ClearIDBConnection
-		mSQLHelper.ClearIDBConnection()
+	Public Sub ClearIdbConnection() Implements IdbProvider.ClearIdbConnection
+		mSqlHelper.ClearIdbConnection()
 	End Sub
 #End Region
 
 #Region "CLOSE I DB CONNECTION "
-	Public Sub CloseIDBConnection()
-		mSQLHelper.CloseIDBConnection()
+	Public Sub CloseIdbConnection()
+		mSqlHelper.CloseIdbConnection()
 	End Sub
 #End Region
 
 #Region "DISPOSE I DB CONNECTION "
-	Public Sub DisposeIDBConnection() Implements IDBProvider.DisposeIDBConnection
-		mSQLHelper.DisposeIDBConnection()
+	Public Sub DisposeIdbConnection() Implements IdbProvider.DisposeIdbConnection
+		mSqlHelper.DisposeIdbConnection()
 	End Sub
 #End Region
 
 #Region "GET I DB CONNECTION KEY"
 
-	Public Function GetIDBConnectionKey() As String Implements IDBProvider.GetIDBConnectionKey
-		Return mSQLHelper.GetIDBConnectionKey
+	Public Function GetIdbConnectionKey() As String Implements IdbProvider.GetIdbConnectionKey
+		Return mSqlHelper.GetIdbConnectionKey
 	End Function
 #End Region
 
@@ -674,7 +674,7 @@ Friend Class SQLProvider
 #Region "SET STATES"
 
 #Region "SET STATE OBJECT"
-	Friend Sub SetStateObject(ByVal pDataRow As DataRow, ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition)
+	Friend Sub SetStateObject(ByVal pDataRow As DataRow, ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition) Implements IDBProvider.SetStateObject
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.Properities
 			SetStateObjectAtomic(pObject, mPropertyEntry.Value, pDataRow)
 		Next
@@ -737,11 +737,11 @@ Friend Class SQLProvider
 	'Utilizar unicamente para debug 'No borrar
 	Private Function GetColumnNames(ByVal pDatarow As DataRow) As String
 		Dim mIndex As Int32 = 0
-		Dim mSalida As String = ""
+		Dim mSalida As New Text.StringBuilder
 		For mIndex = 0 To pDatarow.Table.Columns.Count - 1
-			mSalida += pDatarow.Table.Columns(mIndex).ColumnName & ", "
+			mSalida.Append(pDatarow.Table.Columns(mIndex).ColumnName & ", ")
 		Next
-		Return mSalida
+		Return mSalida.ToString
 	End Function
 #End Region
 
@@ -753,7 +753,7 @@ Friend Class SQLProvider
 
 		Select Case pProcedure.Type
 			Case PROCEDURE_TYPE.MSSQL_SP
-				Dim mSQLParameters As SqlParameter() = mSQLHelper.GetSQLParameters(pProcedure.Value)
+				Dim mSQLParameters As SqlParameter() = mSQLHelper.GetSqlParameters(pProcedure.Value)
 				If mSQLParameters IsNot Nothing AndAlso mSQLParameters.Length > 0 Then
 					For Each mSqlParameter As SqlParameter In mSQLParameters
 						If mSqlParameter.ParameterName <> "" Then
@@ -792,7 +792,7 @@ Friend Class SQLProvider
 	Private Function GetCompleteParameterCollection(ByVal pProcedure As String, ByVal pParameterCollection As ParameterCollection) As ParameterCollection
 		Dim mParameterCollection As New ParameterCollection
 
-		Dim mSQLParameters As SqlParameter() = mSQLHelper.GetSQLParameters(pProcedure)
+		Dim mSQLParameters As SqlParameter() = mSQLHelper.GetSqlParameters(pProcedure)
 		If mSQLParameters IsNot Nothing AndAlso mSQLParameters.Length > 0 Then
 			For Each mSqlParameter As SqlParameter In mSQLParameters
 				If mSqlParameter.ParameterName <> "" Then

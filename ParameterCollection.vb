@@ -20,18 +20,37 @@ Public Class ParameterCollection
 
 #Region "FIELDS"
 	Private mTypes As New Dictionary(Of String, Object)
+    Private mTypesName As New Dictionary(Of String, String)
 #End Region
 
 #Region "CONSTRUCTOR"
 
-	Public Sub New()
+    Public Sub New()
 		MyBase.New(GetComparer())
 	End Sub
 
 #End Region
 
+#Region "ADD"
+    Public Shadows Sub Add(ByVal pParameterName As String, ByVal pValue As Object, ByVal pType As SqlDbType, ByVal pTypeName As String)
+        MyBase.Add(pParameterName, pValue)
+        mTypes.Add(pParameterName, pType)
+        mTypesName.Add(pParameterName, pTypeName)
+    End Sub
+
+    Public Shadows Sub Add(ByVal pParameterName As String, ByVal pValue As Object, ByVal pType As SqlDbType)
+        MyBase.Add(pParameterName, pValue)
+        mTypes.Add(pParameterName, pType)
+    End Sub
+
+    Public Shadows Sub Add(ByVal pParameterName As String, ByVal pValue As Object)
+        MyBase.Add(pParameterName, pValue)
+    End Sub
+#End Region
+
+
 #Region "GET COMPARER"
-	Private Shared Function GetComparer() As IEqualityComparer(Of String)
+    Private Shared Function GetComparer() As IEqualityComparer(Of String)
 		Return DirectCast(DirectCast(StringComparer.InvariantCultureIgnoreCase, Object), IEqualityComparer(Of String))
 	End Function
 #End Region
@@ -56,8 +75,18 @@ Public Class ParameterCollection
 	End Function
 #End Region
 
+#Region "GET TYPES NAME"
+    Public Function GetTypesName(ByVal pParameterName As String) As String
+        If mTypesName.ContainsKey(pParameterName) Then
+            Return mTypesName(pParameterName)
+        Else
+            Return Nothing
+        End If
+    End Function
+#End Region
+
 #Region "ADD PARAMETER COLLECTION"
-	Public Sub AddParameterCollection(ByRef pParameterCollection As ParameterCollection)
+    Public Sub AddParameterCollection(ByRef pParameterCollection As ParameterCollection)
 		For Each mEntry As Generic.KeyValuePair(Of String, Object) In pParameterCollection
 			Me.Add(mEntry.Key, mEntry.Value)
 		Next

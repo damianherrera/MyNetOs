@@ -1,38 +1,37 @@
-﻿Imports System.Data.SqlClient
-Imports System.Reflection
+﻿Imports System.Reflection
 Imports System.Xml
 Imports log4net
-Imports log4net.Config
 Imports MyNetOS.Orm.Misc
 Imports MyNetOS.Orm.Types
 
 Public Class ORMHelper
 
 #Region "EVENTS"
+	Public Shared Event BeforeSave(ByVal pObject As Object)
+	Public Shared Event BeforeUpdate(ByVal pObject As Object)
+	Public Shared Event BeforeDelete(ByVal pObject As Object)
+	Public Shared Event BeforeDeleteAll(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
+	Public Shared Event BeforeGet(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
+	Public Shared Event BeforeGetAll(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
+	Public Shared Event BeforeUserProcedure(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
+	Public Shared Event BeforeExecuteDataSet(ByVal pProcedure As String, ByRef pParameterCollection As ParameterCollection)
+	Public Shared Event BeforeExecute(ByVal pProcedure As String, ByRef pParameterCollection As ParameterCollection)
+	Public Shared Event BeforeExecuteText(ByVal pText As String)
 
-	Public Shared Event Before_Save(ByVal pObject As Object)
-	Public Shared Event Before_Update(ByVal pObject As Object)
-	Public Shared Event Before_Delete(ByVal pObject As Object)
-	Public Shared Event Before_DeleteAll(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
-	Public Shared Event Before_Get(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
-	Public Shared Event Before_GetAll(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
-	Public Shared Event Before_UserProcedure(ByVal pType As System.Type, ByRef pParameterCollection As ParameterCollection)
-	Public Shared Event Before_ExecuteDataSet(ByVal pProcedure As String, ByRef pParameterCollection As ParameterCollection)
-	Public Shared Event Before_Execute(ByVal pProcedure As String, ByRef pParameterCollection As ParameterCollection)
-	Public Shared Event Before_ExecuteText(ByVal pText As String)
-
-	Public Shared Event After_Save(ByVal pObject As Object)
-	Public Shared Event After_Update(ByVal pObject As Object)
-	Public Shared Event After_Delete(ByVal pObject As Object)
+	Public Shared Event AfterSave(ByVal pObject As Object)
+	Public Shared Event AfterUpdate(ByVal pObject As Object)
+	Public Shared Event AfterDelete(ByVal pObject As Object)
 #End Region
 
 #Region "FIELDS"
 
-	Private Shared mIndentityCache As New Generic.Dictionary(Of String, Int64)
+	Private Shared mIndentityCache As New Generic.Dictionary(Of String, Object)
 	Private Shared mMutex As New System.Threading.Mutex
 	Private Shared mCallerCountKey As String = "__CALLERCOUNTKEY"
 	Private Shared mCallerCountMax As Int32 = 5
 	Private Shared logger As ILog = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType)
+	Private Shared mMaxDepth As Int32 = 3
+	Private Shared mHashcodeMaxDepth As Int32 = 4
 #End Region
 
 #Region "PROPERTIES"
@@ -49,7 +48,7 @@ Public Class ORMHelper
 
 #Region "GET I DB PROVIDER"
 
-	Public Shared Function GetIDBProvider() As IDBProvider
+	Public Shared Function GetIdbProvider() As IdbProvider
 		Return ProviderFactory.GetDBProvider
 	End Function
 #End Region
@@ -86,7 +85,7 @@ Public Class ORMHelper
 
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pObject)
 
-		If Not mClassDefinition.PrimaryKeys Is Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
+		If mClassDefinition.PrimaryKeys IsNot Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
 			For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
 
 				If mPrimaryKeyEntry.Value.Generator = "autoincrement" AndAlso CType(pObject.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(pObject, Nothing), Int32) = 0 Then
@@ -95,15 +94,17 @@ Public Class ORMHelper
 			Next
 		End If
 
-		RaiseEvent Before_Save(pObject)
+		RaiseEvent BeforeSave(pObject)
 
-		GetIDBProvider.Save(pObject, mClassDefinition)
+		SetHashCode(pObject, mClassDefinition)
+
+		GetIdbProvider.Save(pObject, mClassDefinition)
 
 		SaveAsociations(pObject, mClassDefinition)
 
-		RaiseEvent After_Save(pObject)
+		RaiseEvent AfterSave(pObject)
 
-		If ORMManager.Configuration.Caching And mClassDefinition.Caching Then
+		If ORMManager.Configuration.Caching AndAlso mClassDefinition.Caching Then
 			ObjectHelper.Cache.SaveInWorkSpaces(pObject)
 		End If
 
@@ -122,9 +123,11 @@ Public Class ORMHelper
 
 		Try
 
-			RaiseEvent Before_Update(pObject)
+			RaiseEvent BeforeUpdate(pObject)
 
-			GetIDBProvider.Update(pObject, mClassDefinition)
+			SetHashCode(pObject, mClassDefinition)
+
+			GetIdbProvider.Update(pObject, mClassDefinition)
 
 			If Not pIgnoreAsociations Then
 				SaveAsociations(pObject, mClassDefinition)
@@ -134,7 +137,7 @@ Public Class ORMHelper
 				ObjectHelper.Cache.SaveInWorkSpaces(pObject)
 			End If
 
-			RaiseEvent After_Update(pObject)
+			RaiseEvent AfterUpdate(pObject)
 
 			UpdateTriggers(pObject, mClassDefinition)
 		Catch ex As Exception
@@ -153,7 +156,7 @@ Public Class ORMHelper
 
 		Try
 
-			RaiseEvent Before_Delete(pObject)
+			RaiseEvent BeforeDelete(pObject)
 
 			'1ro. borra asociaciones para no generar errores de ForengKey
 			DeleteAsociations(pObject, mClassDefinition)
@@ -165,13 +168,15 @@ Public Class ORMHelper
 				pObject.GetType.GetProperty(mClassDefinition.DeletedProperty).SetValue(pObject, True, Nothing)
 			End If
 
-			GetIDBProvider.Delete(pObject, mClassDefinition)
+			SetHashCode(pObject, mClassDefinition)
+
+			GetIdbProvider.Delete(pObject, mClassDefinition)
 
 			If mClassDefinition.Caching Then
 				ObjectHelper.Cache.ClearCache(pObject)
 			End If
 
-			RaiseEvent After_Delete(pObject)
+			RaiseEvent AfterDelete(pObject)
 
 			DeleteTriggers(pObject, mClassDefinition)
 
@@ -188,9 +193,9 @@ Public Class ORMHelper
 	Public Shared Sub DeleteAll(ByVal pType As System.Type, ByVal pParameterCollection As ParameterCollection)
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pType)
 
-		RaiseEvent Before_DeleteAll(pType, pParameterCollection)
+		RaiseEvent BeforeDeleteAll(pType, pParameterCollection)
 
-		GetIDBProvider.DeleteAll(pType, mClassDefinition, pParameterCollection)
+		GetIdbProvider.DeleteAll(pType, mClassDefinition, pParameterCollection)
 	End Sub
 #End Region
 
@@ -201,7 +206,7 @@ Public Class ORMHelper
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pObject)
 		Dim mParameterCollection As New ParameterCollection
 
-		If Not mClassDefinition.PrimaryKeys Is Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
+		If mClassDefinition.PrimaryKeys IsNot Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
 			For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
 				mParameterCollection.Add(mPrimaryKeyEntry.Value.Name, pObject.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(pObject, Nothing))
 			Next
@@ -238,13 +243,13 @@ Public Class ORMHelper
 					mParameterCollection.Add(mPrimaryKeyEntry.Value.Parameter, pPrimaryKeyValue)
 				Next
 			Else
-				Throw ((New Exception("The type " & pType.FullName & " don't have single primary key.")))
+				Throw (New Exception("The type " & pType.FullName & " don't have single primary key."))
 			End If
 
-			RaiseEvent Before_Get(pType, mParameterCollection)
+			RaiseEvent BeforeGet(pType, mParameterCollection)
 
 			'Cargo el objeto
-			GetIDBProvider.Get(mObjectInCache, mClassDefinition, mParameterCollection)
+			GetIdbProvider.Get(mObjectInCache, mClassDefinition, mParameterCollection)
 
 			If mObjectInCache IsNot Nothing Then
 				If pCallerCountMax > 0 Then
@@ -281,10 +286,10 @@ Public Class ORMHelper
 			Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pType)
 			mObjectInCache = ObjectHelper.CreateInstance(pType)
 
-			RaiseEvent Before_Get(pType, pParameterCollection)
+			RaiseEvent BeforeGet(pType, pParameterCollection)
 
 			'Cargo el objeto
-			GetIDBProvider.Get(mObjectInCache, mClassDefinition, pParameterCollection)
+			GetIdbProvider.Get(mObjectInCache, mClassDefinition, pParameterCollection)
 
 			If mObjectInCache IsNot Nothing Then
 				If pCallerCountMax > 0 Then
@@ -294,7 +299,6 @@ Public Class ORMHelper
 				If mClassDefinition.Caching Then
 					'Grabo el objeto en WorkSpaces
 					ObjectHelper.Cache.SaveInWorkSpaces(mObjectInCache)
-					'TODO: Ver como pasar el pTimeInCache. 
 					'El cache es global o por request, con lo cual el TimeInCache debe ser grande
 					ObjectHelper.Cache.SaveInWorkSpaces(pType, pParameterCollection, 1000, mObjectInCache)
 					'Agrego dependencia para que cuando borren el mObjectInCache, tambíen se borre esta entrada
@@ -312,16 +316,16 @@ Public Class ORMHelper
 		Dim mParameterCollection As New ParameterCollection
 		Dim mObject As Object = ObjectHelper.CreateInstance(pType)
 
-		RaiseEvent Before_Get(pType, mParameterCollection)
+		RaiseEvent BeforeGet(pType, mParameterCollection)
 
 		'Cargo el objeto
-		GetIDBProvider.Get(mObject, mClassDefinition, pParameterCollection)
+		GetIdbProvider.Get(mObject, mClassDefinition, pParameterCollection)
 
-		If mObject IsNot Nothing Then
-			If pCallerCountMax > 0 Then
-				'Cargo las asociaciones
-				LoadAsociations(mObject, mClassDefinition, pCallerCountMax - 1)
-			End If
+		If mObject IsNot Nothing AndAlso
+			pCallerCountMax > 0 Then
+
+			'Cargo las asociaciones
+			LoadAsociations(mObject, mClassDefinition, pCallerCountMax - 1)
 		End If
 
 		Return mObject
@@ -365,10 +369,10 @@ Public Class ORMHelper
 		Dim mObjectList As Object = ObjectHelper.CreateInstance(pType)
 		Dim mObjectAll As Object() = Nothing
 
-		RaiseEvent Before_GetAll(pType, pParameterCollection)
+		RaiseEvent BeforeGetAll(pType, pParameterCollection)
 
 		'Valido que no este eliminada la entidad
-		If mClassDefinition.DeletedProperty <> "" And pParameterCollection IsNot Nothing AndAlso Not pParameterCollection.ContainsKey(mClassDefinition.DeletedProperty) Then
+		If mClassDefinition.DeletedProperty <> "" AndAlso pParameterCollection IsNot Nothing AndAlso Not pParameterCollection.ContainsKey(mClassDefinition.DeletedProperty) Then
 			pParameterCollection.Add(mClassDefinition.DeletedProperty, False)
 		End If
 
@@ -379,9 +383,9 @@ Public Class ORMHelper
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
 		'DH: 2010.05.06: Agrego OR pTimeInCache=0 porque puede ser que exista en WorkSpace, porque LoadObjects lo agrego y si el pTimeInCache=0 nunca se setea la colección.
-		If mObjectAll Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(mWSKey) Or pTimeInCache = 0) Then
+		If mObjectAll Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(mWSKey) OrElse pTimeInCache = 0) Then
 
-			mObjectAll = GetIDBProvider.GetAll(mObjectList, mClassDefinition, pParameterCollection)
+			mObjectAll = GetIdbProvider.GetAll(mObjectList, mClassDefinition, pParameterCollection)
 
 			If pTop <> 0 Then
 				ResizeArray(pType, mObjectAll, pTop)
@@ -407,10 +411,10 @@ Public Class ORMHelper
 		Dim mObjectList As Object = ObjectHelper.CreateInstance(pType)
 		Dim mObjectAll As Object() = Nothing
 
-		RaiseEvent Before_GetAll(pType, pParameterCollection)
+		RaiseEvent BeforeGetAll(pType, pParameterCollection)
 
 		'Valido que no este eliminada la entidad
-		If mClassDefinition.DeletedProperty <> "" And pParameterCollection IsNot Nothing AndAlso Not pParameterCollection.ContainsKey(mClassDefinition.DeletedProperty) Then
+		If mClassDefinition.DeletedProperty <> "" AndAlso pParameterCollection IsNot Nothing AndAlso Not pParameterCollection.ContainsKey(mClassDefinition.DeletedProperty) Then
 			pParameterCollection.Add(mClassDefinition.DeletedProperty, False)
 		End If
 
@@ -421,10 +425,10 @@ Public Class ORMHelper
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
 		'DH: 2010.05.06: Agrego OR pTimeInCache=0 porque puede ser que exista en WorkSpace, porque LoadObjects lo agrego y si el pTimeInCache=0 nunca se setea la colección.
-		If mObjectAll Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(mWSKey) Or pTimeInCache = 0) Then
+		If mObjectAll Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(mWSKey) OrElse pTimeInCache = 0) Then
 
 			'Cargo el objeto
-			mObjectAll = GetIDBProvider.GetAll(mObjectList, mClassDefinition, pParameterCollection, pProcedure)
+			mObjectAll = GetIdbProvider.GetAll(mObjectList, mClassDefinition, pParameterCollection, pProcedure)
 
 			If pTop <> 0 Then
 				ResizeArray(pType, mObjectAll, pTop)
@@ -452,10 +456,10 @@ Public Class ORMHelper
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pType)
 		Dim mObjectList As Object = ObjectHelper.CreateInstance(pType)
 
-		RaiseEvent Before_GetAll(pType, pParameterCollection)
+		RaiseEvent BeforeGetAll(pType, pParameterCollection)
 
 		'Cargo el objeto
-		Dim mObjectByPage As ObjectByPage = GetIDBProvider.GetAllByPage(mObjectList, mClassDefinition, pParameterCollection)
+		Dim mObjectByPage As ObjectByPage = GetIdbProvider.GetAllByPage(mObjectList, mClassDefinition, pParameterCollection)
 		Dim mObjectAll As Object() = mObjectByPage.Object
 
 		LoadObjects(mObjectAll, mClassDefinition, mCallerCountMax)
@@ -468,10 +472,10 @@ Public Class ORMHelper
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pType)
 		Dim mObjectList As Object = ObjectHelper.CreateInstance(pType)
 
-		RaiseEvent Before_GetAll(pType, pParameterCollection)
+		RaiseEvent BeforeGetAll(pType, pParameterCollection)
 
 		'Cargo el objeto
-		Dim mObjectByPage As ObjectByPage = GetIDBProvider.GetAllByPage(mObjectList, mClassDefinition, pParameterCollection, pProcedure)
+		Dim mObjectByPage As ObjectByPage = GetIdbProvider.GetAllByPage(mObjectList, mClassDefinition, pParameterCollection, pProcedure)
 		Dim mObjectAll As Object() = mObjectByPage.Object
 
 		LoadObjects(mObjectAll, mClassDefinition, mCallerCountMax)
@@ -482,13 +486,128 @@ Public Class ORMHelper
 
 #End Region
 
+#Region "HASHCODE"
+
+	Public Shared Sub SetHashCode(ByRef pObject As Object, ByVal pClassDefinition As ClassDefinition)
+
+		If pObject IsNot Nothing AndAlso pClassDefinition IsNot Nothing AndAlso pClassDefinition.Hashcodeable Then
+			If pObject.GetType.GetProperty(pClassDefinition.Hashcode) Is Nothing Then
+				Throw (New Exception("Property " & pClassDefinition.Hashcode & " in class " & pObject.GetType.FullName & " is missing. Please check hashcode node in mapping file for this class."))
+			End If
+
+			pObject.GetType.GetProperty(pClassDefinition.Hashcode).SetValue(pObject, GetHashCodeInternal(pObject, pClassDefinition, 0).GetHashCode, Nothing)
+		End If
+	End Sub
+
+	Private Shared Function GetHashCodeInternal(ByRef pObject As Object, ByVal pClassDefinition As ClassDefinition, ByVal pDepth As Int32) As String
+		Dim mRetorno As New Text.StringBuilder
+
+		If pObject IsNot Nothing AndAlso pClassDefinition IsNot Nothing AndAlso pClassDefinition.Hashcodeable AndAlso pDepth < mHashcodeMaxDepth Then
+			If pObject.GetType.GetProperty(pClassDefinition.Hashcode) Is Nothing Then
+				Throw (New Exception("Property " & pClassDefinition.Hashcode & " in class " & pObject.GetType.FullName & " is missing. Please check hashcode node in mapping file for this class."))
+			End If
+
+			'Verifico asociaciones
+			If pClassDefinition.Asociations IsNot Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
+				For Each mAsociationEntry As Generic.KeyValuePair(Of String, AsociationDefinition) In pClassDefinition.Asociations
+					'Obtengo la referencia del objeto asociado
+					Dim mAsociationObject As Object = pObject.GetType.GetProperty(mAsociationEntry.Value.Name).GetValue(pObject, Nothing)
+					If mAsociationObject IsNot Nothing Then
+						mRetorno.Append(GetHashCodeInternal(mAsociationObject, ORMManager.GetClassDefinition(mAsociationObject), pDepth + 1) & ",")
+					End If
+				Next
+			End If
+
+			'Verifico diccionarios
+			If pClassDefinition.Dictionaries IsNot Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
+				For Each mDictionaryEntry As Generic.KeyValuePair(Of String, DictionaryDefinition) In pClassDefinition.Dictionaries
+
+					If pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name) Is Nothing Then
+						Throw (New Exception("The property " & mDictionaryEntry.Value.Asociation.Name & " not exists in class " & pObject.GetType.FullName & "."))
+					End If
+
+					If mDictionaryEntry.Value.Asociation.Lazy Then
+						'Si es lazy, cargo en objeto antes de borrar en repositorio
+						pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(pObject, Nothing)
+					End If
+
+					If pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(pObject, Nothing).GetType Is GetType(System.Collections.Hashtable) Then
+						'Si es HashTable
+						Dim mHashTable As Hashtable = CType(pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(pObject, Nothing), Hashtable)
+						If mHashTable IsNot Nothing Then
+							'Ordeno el Hashtable para que siempre lo serialize en el mismo orden
+							Dim mCompositeIdsKeys As New Dictionary(Of String, Object)
+							Dim mTargetClassDefinition As ClassDefinition = Nothing
+							For Each mKey As Object In (New ArrayList(mHashTable.Keys))
+								If mHashTable(mKey).GetType.GetProperty(mDictionaryEntry.Value.Key.Value) Is Nothing Then
+									Throw (New Exception("Dictionary " & mDictionaryEntry.Key & " in class " & pObject.GetType.FullName & " is incorrect. The property " & mDictionaryEntry.Value.Key.Value & " not exists in " & mHashTable(mKey).GetType.FullName))
+								End If
+
+								'Obtengo el TargetClassDefinition
+								If mTargetClassDefinition Is Nothing Then
+									mTargetClassDefinition = ORMManager.GetClassDefinition(mHashTable(mKey))
+								End If
+
+								'Obtengo el CompositeId con Keys y Values
+								Dim mKeysParameters As ParameterCollection = GetCompositeIdParameterCollection(mHashTable(mKey), mTargetClassDefinition.PrimaryKeys)
+								Dim mKeysValues As New List(Of String)
+								For Each mKeyParameter As String In mKeysParameters.Keys
+									Dim mKeyId As String = mKeysParameters(mKeyParameter).ToString
+									If mKeyId = "0" Then
+										mKeyId = System.Guid.NewGuid.ToString()
+									End If
+									mKeysValues.Add(mKeyParameter & "-" & mKeyId)
+								Next
+
+								'Ordeno el CompositeId
+								mKeysValues.Sort()
+
+								mCompositeIdsKeys.Add(String.Join(",", mKeysValues.ToArray()), mHashTable(mKey))
+							Next
+
+							If mCompositeIdsKeys IsNot Nothing AndAlso mCompositeIdsKeys.Count > 0 Then
+								Dim mKeysValues As New List(Of String)(mCompositeIdsKeys.Keys)
+								'Ordeno los Keys
+								mKeysValues.Sort()
+								For Each mKeyStr As String In mKeysValues
+									mRetorno.Append(GetHashCodeInternal(mCompositeIdsKeys(mKeyStr), mTargetClassDefinition, pDepth + 1) & ",")
+								Next
+							End If
+						End If
+
+					ElseIf pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(pObject, Nothing).GetType Is GetType(SortedHashTable) Then
+						'Si es SortedHashTable
+						Dim mSortedHashTable As SortedHashTable = CType(pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(pObject, Nothing), SortedHashTable)
+						If mSortedHashTable IsNot Nothing Then
+							For mIndex As Int32 = 0 To mSortedHashTable.Count - 1
+								Dim mObjectItem As Object = mSortedHashTable.GetByIndex(mIndex)
+								If mObjectItem.GetType.GetProperty(mDictionaryEntry.Value.Key.Value) Is Nothing Then
+									Throw (New Exception("Dictionary " & mDictionaryEntry.Key & " in class " & pObject.GetType.FullName & " is incorrect. The property " & mDictionaryEntry.Value.Key.Value & " not exists in " & mObjectItem.GetType.FullName))
+								End If
+
+								mRetorno.Append(GetHashCodeInternal(mObjectItem, ORMManager.GetClassDefinition(mObjectItem), pDepth + 1) & ",")
+							Next
+						Else
+							Throw (New Exception("The property " & mDictionaryEntry.Value.Asociation.Name & " in class " & pObject.GetType.FullName & " not is a HashTable or SortedHashTable type."))
+						End If
+					End If
+				Next
+			End If
+
+			mRetorno.Append(Utilities.ObjectToJson(pObject).GetHashCode & ",")
+		End If
+
+		Return mRetorno.ToString
+	End Function
+#End Region
+
 #Region "TRIGGERS"
 	Public Shared Sub SaveTriggers(ByVal pObject As Object)
 		SaveTriggers(pObject, ORMManager.GetClassDefinition(pObject))
 	End Sub
 
 	Private Shared Sub SaveTriggers(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition)
-		If ORMManager.Configuration.ExistsTrigger And pClassDefinition.Triggers.Count > 0 Then
+		If ORMManager.Configuration.ExistsTrigger AndAlso pClassDefinition.Triggers.Count > 0 Then
 			For Each mTrigger As TriggerDefinition In pClassDefinition.Triggers
 				If mTrigger.OnSave Then
 					For Each mAction As ActionDefinition In mTrigger.Actions
@@ -504,7 +623,7 @@ Public Class ORMHelper
 	End Sub
 
 	Private Shared Sub UpdateTriggers(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition)
-		If ORMManager.Configuration.ExistsTrigger And pClassDefinition.Triggers.Count > 0 Then
+		If ORMManager.Configuration.ExistsTrigger AndAlso pClassDefinition.Triggers.Count > 0 Then
 			For Each mTrigger As TriggerDefinition In pClassDefinition.Triggers
 				If mTrigger.OnUpdate Then
 					For Each mAction As ActionDefinition In mTrigger.Actions
@@ -520,7 +639,7 @@ Public Class ORMHelper
 	End Sub
 
 	Private Shared Sub DeleteTriggers(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition)
-		If ORMManager.Configuration.ExistsTrigger And pClassDefinition.Triggers.Count > 0 Then
+		If ORMManager.Configuration.ExistsTrigger AndAlso pClassDefinition.Triggers.Count > 0 Then
 			For Each mTrigger As TriggerDefinition In pClassDefinition.Triggers
 				If mTrigger.OnDelete Then
 					For Each mAction As ActionDefinition In mTrigger.Actions
@@ -533,9 +652,9 @@ Public Class ORMHelper
 
 	Public Shared Sub LaunchTrigger(ByVal pObject As Object, ByVal pId As String)
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pObject)
-		If ORMManager.Configuration.ExistsTrigger And mClassDefinition.Triggers.Count > 0 Then
+		If ORMManager.Configuration.ExistsTrigger AndAlso mClassDefinition.Triggers.Count > 0 Then
 			For Each mTrigger As TriggerDefinition In mClassDefinition.Triggers
-				If (mTrigger.Id = pId) Or (Not pId <> "" And mTrigger.OnAll) Then
+				If (mTrigger.Id = pId) OrElse (pId = "" AndAlso mTrigger.OnAll) Then
 					For Each mAction As ActionDefinition In mTrigger.Actions
 						GetITrigger.Launch(pObject, mAction)
 					Next
@@ -560,7 +679,7 @@ Public Class ORMHelper
 	Public Shared Function [UserProcedure](ByVal pType As System.Type, ByVal pUserProcedure As String, ByVal pParameterCollection As ParameterCollection, ByVal pTimeInCache As Int32) As Object()
 		Dim mObjectAll As Object() = Nothing
 
-		RaiseEvent Before_UserProcedure(pType, pParameterCollection)
+		RaiseEvent BeforeUserProcedure(pType, pParameterCollection)
 
 		Dim mWSKey As String = ObjectHelper.Cache.GetWorkSpacesKey(pType, pUserProcedure, pParameterCollection)
 		'Dim mXMutex As System.Threading.Mutex = Nothing
@@ -580,7 +699,7 @@ Public Class ORMHelper
 			Dim mObjectList As Object = ObjectHelper.CreateInstance(pType)
 
 			'Cargo el objeto
-			mObjectAll = GetIDBProvider.UserProcedure(mObjectList, mClassDefinition, pUserProcedure, pParameterCollection)
+			mObjectAll = GetIdbProvider.UserProcedure(mObjectList, mClassDefinition, pUserProcedure, pParameterCollection)
 
 			LoadObjects(mObjectAll, mClassDefinition, mCallerCountMax)
 
@@ -609,7 +728,7 @@ Public Class ORMHelper
 
 		Dim mObjectByPage As ObjectByPage = Nothing
 
-		RaiseEvent Before_UserProcedure(pType, pParameterCollection)
+		RaiseEvent BeforeUserProcedure(pType, pParameterCollection)
 
 		Dim mWSKey As String = ObjectHelper.Cache.GetWorkSpacesKey(pType, pUserProcedure, pParameterCollection)
 		'Dim mXMutex As System.Threading.Mutex = Nothing
@@ -622,12 +741,12 @@ Public Class ORMHelper
 		End If
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
-		If mObjectByPage Is Nothing And Not ObjectHelper.Cache.ExistsInWorkSpaces(mWSKey) Then
+		If mObjectByPage Is Nothing AndAlso Not ObjectHelper.Cache.ExistsInWorkSpaces(mWSKey) Then
 			Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pType)
 			Dim mObjectList As Object = ObjectHelper.CreateInstance(pType)
 
 			'Cargo el objeto
-			mObjectByPage = GetIDBProvider.UserProcedureByPage(mObjectList, mClassDefinition, pUserProcedure, pParameterCollection)
+			mObjectByPage = GetIdbProvider.UserProcedureByPage(mObjectList, mClassDefinition, pUserProcedure, pParameterCollection)
 			Dim mObjectAll As Object() = mObjectByPage.Object
 
 			LoadObjects(mObjectAll, mClassDefinition, mCallerCountMax)
@@ -660,7 +779,7 @@ Public Class ORMHelper
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pObject)
 
 		'Genero el PrimaryKey y no reservo el Identity
-		If Not mClassDefinition.PrimaryKeys Is Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
+		If mClassDefinition.PrimaryKeys IsNot Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
 			For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
 
 				If mPrimaryKeyEntry.Value.Generator = "autoincrement" AndAlso CType(pObject.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(pObject, Nothing), Int32) = 0 Then
@@ -673,7 +792,7 @@ Public Class ORMHelper
 		Dim mOldVersion As Int32
 		If mClassDefinition.Versionable Then
 			Dim mValue As Object = pObject.GetType.GetProperty(mClassDefinition.Version).GetValue(pObject, Nothing)
-			If Not mValue Is Nothing AndAlso Not mValue.GetType.GetInterface("Nullables.INullableType") Is Nothing Then
+			If mValue IsNot Nothing AndAlso mValue.GetType.GetInterface("Nullables.INullableType") IsNot Nothing Then
 				If CType(mValue, Nullables.INullableType).HasValue Then
 					mOldVersion = CType(CType(mValue, Nullables.INullableType).Value, Int32)
 				Else
@@ -684,7 +803,7 @@ Public Class ORMHelper
 			End If
 		End If
 
-		GetIDBProvider.Save(pObject, mClassDefinition)
+		GetIdbProvider.Save(pObject, mClassDefinition)
 
 		SaveAsociations(pObject, mClassDefinition)
 
@@ -711,7 +830,7 @@ Public Class ORMHelper
 		Dim mOldVersion As Int32
 		If mClassDefinition.Versionable Then
 			Dim mValue As Object = pObject.GetType.GetProperty(mClassDefinition.Version).GetValue(pObject, Nothing)
-			If Not mValue Is Nothing AndAlso Not mValue.GetType.GetInterface("Nullables.INullableType") Is Nothing Then
+			If mValue IsNot Nothing AndAlso mValue.GetType.GetInterface("Nullables.INullableType") IsNot Nothing Then
 				If CType(mValue, Nullables.INullableType).HasValue Then
 					mOldVersion = CType(CType(mValue, Nullables.INullableType).Value, Int32)
 				Else
@@ -722,7 +841,7 @@ Public Class ORMHelper
 			End If
 		End If
 
-		GetIDBProvider.Update(pObject, mClassDefinition)
+		GetIdbProvider.Update(pObject, mClassDefinition)
 
 		SaveAsociations(pObject, mClassDefinition)
 
@@ -749,7 +868,7 @@ Public Class ORMHelper
 		Dim mOldVersion As Int32
 		If mClassDefinition.Versionable Then
 			Dim mValue As Object = pObject.GetType.GetProperty(mClassDefinition.Version).GetValue(pObject, Nothing)
-			If Not mValue Is Nothing AndAlso Not mValue.GetType.GetInterface("Nullables.INullableType") Is Nothing Then
+			If mValue IsNot Nothing AndAlso mValue.GetType.GetInterface("Nullables.INullableType") IsNot Nothing Then
 				If CType(mValue, Nullables.INullableType).HasValue Then
 					mOldVersion = CType(CType(mValue, Nullables.INullableType).Value, Int32)
 				Else
@@ -760,7 +879,7 @@ Public Class ORMHelper
 			End If
 		End If
 
-		GetIDBProvider.Delete(pObject, mClassDefinition)
+		GetIdbProvider.Delete(pObject, mClassDefinition)
 
 		'Establezco la vieja versión del objeto
 		If mClassDefinition.Versionable Then
@@ -788,7 +907,7 @@ Public Class ORMHelper
 						LoadAsociations(mObject, pClassDefinition, pCallerCountMax - 1)
 					End If
 
-					If pClassDefinition.Caching And pCallerCountMax > 0 Then
+					If pClassDefinition.Caching AndAlso pCallerCountMax > 0 Then
 						'Grabo el objeto en WorkSpaces
 						ObjectHelper.Cache.SaveInWorkSpaces(mObject)
 					End If
@@ -917,7 +1036,6 @@ Public Class ORMHelper
 				Next
 
 				pObject.GetType.GetProperty(pDictionary.Asociation.Name).SetValue(pObject, mDictionaryProperty, Nothing)
-				'TODO: Guardar en WorkSpaces la colección para luego comprar al momento de hacer SAVE/UPDATE
 
 			Else
 
@@ -933,11 +1051,13 @@ Public Class ORMHelper
 				'Lo hago después porque puede venir en un campo de orden un valor fuera del rango index
 				For Each mObject As Object In mObjectAll
 					'Establezco el orden del SortedHashTable
-					mDictionaryProperty.SetByIndex(CType(mObject.GetType.GetProperty(pDictionary.Index.Parameter).GetValue(mObject, Nothing), Int32), mObject)
+					Dim mIndex As Int32 = CType(mObject.GetType.GetProperty(pDictionary.Index.Parameter).GetValue(mObject, Nothing), Int32)
+					If pDictionary.Index.Add <> 0 Then
+						mIndex += pDictionary.Index.Add
+					End If
+					mDictionaryProperty.SetByIndex(mIndex, mObject)
 				Next
 				pObject.GetType.GetProperty(pDictionary.Asociation.Name).SetValue(pObject, mDictionaryProperty, Nothing)
-				'TODO: Guardar en WorkSpaces la colección para luego comprar al momento de hacer SAVE/UPDATE
-
 			End If
 		ElseIf pDictionary.Asociation.Lazy Then
 			'Si habia lazy y no hay elementos en el diccionario, establezco la coleccion vacia
@@ -949,7 +1069,7 @@ Public Class ORMHelper
 #Region "LOAD ASOCIATIONS"
 	Private Shared Sub LoadAsociations(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition, ByVal pCallerCountMax As Int32)
 		'Verifico asociaciones
-		If Not pClassDefinition.Asociations Is Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
+		If pClassDefinition.Asociations IsNot Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
 			For Each mAsociationEntry As Generic.KeyValuePair(Of String, AsociationDefinition) In pClassDefinition.Asociations
 				If Not mAsociationEntry.Value.Lazy Then
 					LoadAsociation(pObject, mAsociationEntry.Value, pCallerCountMax)
@@ -958,7 +1078,7 @@ Public Class ORMHelper
 		End If
 
 		'Verifico diccionarios
-		If Not pClassDefinition.Dictionaries Is Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
+		If pClassDefinition.Dictionaries IsNot Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
 			For Each mDictionaryEntry As Generic.KeyValuePair(Of String, DictionaryDefinition) In pClassDefinition.Dictionaries
 				If mDictionaryEntry.Value.Type = DICTIONARY_TYPE.MANY_TO_MANY Then
 					If Not mDictionaryEntry.Value.Asociation.Lazy Then
@@ -984,12 +1104,12 @@ Public Class ORMHelper
 	Private Shared Sub SaveAsociations(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition)
 
 		'Verifico asociaciones
-		If Not pClassDefinition.Asociations Is Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
+		If pClassDefinition.Asociations IsNot Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
 			Dim mIsUpdate As Boolean = False
 			For Each mAsociationEntry As Generic.KeyValuePair(Of String, AsociationDefinition) In pClassDefinition.Asociations
 
 				'Verifico si debo hacer algo con la asociación
-				If mAsociationEntry.Value.CascadeInsert Or mAsociationEntry.Value.CascadeUpdate Then
+				If mAsociationEntry.Value.CascadeInsert OrElse mAsociationEntry.Value.CascadeUpdate Then
 
 					'Obtengo la referencia del objeto asociado
 					Dim mAsociationObject As Object = pObject.GetType.GetProperty(mAsociationEntry.Value.Name).GetValue(pObject, Nothing)
@@ -1039,7 +1159,7 @@ Public Class ORMHelper
 		End If
 
 		'Verifico diccionarios
-		If Not pClassDefinition.Dictionaries Is Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
+		If pClassDefinition.Dictionaries IsNot Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
 			For Each mDictionaryEntry As Generic.KeyValuePair(Of String, DictionaryDefinition) In pClassDefinition.Dictionaries
 
 				'Relaciones MANY_TO_MANY
@@ -1061,7 +1181,7 @@ Public Class ORMHelper
 					End If
 
 					Dim mDeleteParameterValues As ParameterCollection = GetCompositeIdParameterCollection(pObject, mDictionaryEntry.Value.Asociation.CompositeId)
-					GetIDBProvider.ExecuteNonQuery(mProcedureDelete, mDeleteParameterValues)
+					GetIdbProvider.ExecuteNonQuery(mProcedureDelete, mDeleteParameterValues)
 
 					'Si es HashTable
 					If pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(pObject, Nothing).GetType Is GetType(System.Collections.Hashtable) Then
@@ -1080,7 +1200,7 @@ Public Class ORMHelper
 							If mKeysParameters IsNot Nothing AndAlso mKeysParameters.Count > 0 Then
 								mAsociationParameters.AddParameterCollection(mKeysParameters)
 
-								GetIDBProvider.ExecuteNonQuery(mProcedureSave, mAsociationParameters)
+								GetIdbProvider.ExecuteNonQuery(mProcedureSave, mAsociationParameters)
 							End If
 						Next
 
@@ -1108,7 +1228,7 @@ Public Class ORMHelper
 									mAsociationParameters.Add(mDictionaryEntry.Value.Index.Parameter, mIndex)
 								End If
 
-								GetIDBProvider.ExecuteNonQuery(mProcedureSave, mAsociationParameters)
+								GetIdbProvider.ExecuteNonQuery(mProcedureSave, mAsociationParameters)
 
 							End If
 						Next
@@ -1120,7 +1240,7 @@ Public Class ORMHelper
 				ElseIf mDictionaryEntry.Value.Type = DICTIONARY_TYPE.ONE_TO_MANY Then
 
 					'Verifico si debo hacer algo con la asociación
-					If mDictionaryEntry.Value.Asociation.CascadeInsert Or mDictionaryEntry.Value.Asociation.CascadeUpdate Then
+					If mDictionaryEntry.Value.Asociation.CascadeInsert OrElse mDictionaryEntry.Value.Asociation.CascadeUpdate Then
 
 						Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(mDictionaryEntry.Value.Value.Class)
 						If mClassDefinition Is Nothing Then
@@ -1151,13 +1271,13 @@ Public Class ORMHelper
 
 									Dim mIsSave As Boolean = False
 									'Con al menos un valor en nothing, es Save
-									Dim mPrimaryKeyNotDelete As String = ""
+									Dim mPrimaryKeyNotDelete As New Text.StringBuilder
 									For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
 										Dim mPrimaryValue As Object = mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing)
-										If mPrimaryValue Is Nothing Or ConvertHelper.ToInt32(mPrimaryValue) = 0 Then
+										If mPrimaryValue Is Nothing OrElse ConvertHelper.ToInt32(mPrimaryValue) = 0 Then
 											mIsSave = True
 										Else
-											mPrimaryKeyNotDelete += "-" & mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing).ToString
+											mPrimaryKeyNotDelete.Append("-" & mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing).ToString)
 										End If
 									Next
 
@@ -1165,8 +1285,8 @@ Public Class ORMHelper
 										'IS SAVE
 										Save(mEntry.Value)
 										For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
-											Dim mPrimaryValue As Object = mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing)
-											mPrimaryKeyNotDelete += "-" & mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing).ToString
+											'Dim mPrimaryValue As Object = mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing)
+											mPrimaryKeyNotDelete.Append("-" & mEntry.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntry.Value, Nothing).ToString)
 										Next
 									Else
 										'IS UPDATE
@@ -1174,7 +1294,7 @@ Public Class ORMHelper
 									End If
 
 									'Esta PrimaryKey no debe ser eliminada
-									mPrimariesKeyNotDelete.Add(mPrimaryKeyNotDelete)
+									mPrimariesKeyNotDelete.Add(mPrimaryKeyNotDelete.ToString)
 								Next
 
 								'ENVIO DE DELETE
@@ -1183,12 +1303,12 @@ Public Class ORMHelper
 								Dim mObjectWithoutCache As Object = GetWithoutCache(pObject.GetType, mKeysParameters, mCallerCountMax)
 								Dim mHashTableWithoutCache As Hashtable = CType(mObjectWithoutCache.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(mObjectWithoutCache, Nothing), Hashtable)
 								For Each mEntryWithoutCache As DictionaryEntry In mHashTableWithoutCache
-									Dim mPrimaryKeyToDelete As String = ""
+									Dim mPrimaryKeyToDelete As New Text.StringBuilder
 									For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
-										mPrimaryKeyToDelete += "-" & mEntryWithoutCache.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntryWithoutCache.Value, Nothing).ToString
+										mPrimaryKeyToDelete.Append("-" & mEntryWithoutCache.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntryWithoutCache.Value, Nothing).ToString)
 									Next
 									'Si el PrimaryKey no esta, envio el delete de la entrada
-									If Not mPrimariesKeyNotDelete.Contains(mPrimaryKeyToDelete) Then
+									If Not mPrimariesKeyNotDelete.Contains(mPrimaryKeyToDelete.ToString) Then
 										Delete(mEntryWithoutCache.Value)
 									End If
 								Next
@@ -1213,28 +1333,34 @@ Public Class ORMHelper
 
 									Dim mIsSave As Boolean = False
 									'Con al menos un valor en nothing, es Save
-									Dim mPrimaryKeyNotDelete As String = ""
+									Dim mPrimaryKeyNotDelete As New Text.StringBuilder
 
 									For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
 										Dim mPrimaryValue As Object = mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing)
-										If mPrimaryValue Is Nothing Or ConvertHelper.ToInt32(mPrimaryValue) = 0 Then
+										If mPrimaryValue Is Nothing OrElse ConvertHelper.ToInt32(mPrimaryValue) = 0 Then
 											mIsSave = True
 										Else
-											mPrimaryKeyNotDelete += "-" & mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing).ToString
+											mPrimaryKeyNotDelete.Append("-" & mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing).ToString)
 										End If
 									Next
 
 									'Controlo si era indexado
 									If mDictionaryEntry.Value.Index IsNot Nothing Then
-										mObjectItem.GetType.GetProperty(mDictionaryEntry.Value.Index.Parameter).SetValue(mObjectItem, mIndex, Nothing)
+										Dim mIndexNew As Int32 = mIndex
+										If mDictionaryEntry.Value.Index.Add <> 0 Then
+											'Invierto el signo
+											mIndexNew -= mDictionaryEntry.Value.Index.Add
+										End If
+
+										mObjectItem.GetType.GetProperty(mDictionaryEntry.Value.Index.Parameter).SetValue(mObjectItem, mIndexNew, Nothing)
 									End If
 
 									If mIsSave Then
 										'IS SAVE
 										Save(mObjectItem)
 										For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
-											Dim mPrimaryValue As Object = mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing)
-											mPrimaryKeyNotDelete += "-" & mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing).ToString
+											'Dim mPrimaryValue As Object = mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing)
+											mPrimaryKeyNotDelete.Append("-" & mObjectItem.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mObjectItem, Nothing).ToString)
 										Next
 									Else
 										'IS UPDATE
@@ -1242,7 +1368,7 @@ Public Class ORMHelper
 									End If
 
 									'Esta PrimaryKey no debe ser eliminada
-									mPrimariesKeyNotDelete.Add(mPrimaryKeyNotDelete)
+									mPrimariesKeyNotDelete.Add(mPrimaryKeyNotDelete.ToString)
 								Next
 
 								'ENVIO DE DELETE
@@ -1252,12 +1378,12 @@ Public Class ORMHelper
 								Dim mObjectWithoutCache As Object = GetWithoutCache(pObject.GetType, mKeysParameters, mCallerCountMax)
 								Dim mHashTableWithoutCache As SortedHashTable = CType(mObjectWithoutCache.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name).GetValue(mObjectWithoutCache, Nothing), SortedHashTable)
 								For Each mEntryWithoutCache As DictionaryEntry In mHashTableWithoutCache
-									Dim mPrimaryKeyToDelete As String = ""
+									Dim mPrimaryKeyToDelete As New Text.StringBuilder
 									For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
-										mPrimaryKeyToDelete += "-" & mEntryWithoutCache.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntryWithoutCache.Value, Nothing).ToString
+										mPrimaryKeyToDelete.Append("-" & mEntryWithoutCache.Value.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(mEntryWithoutCache.Value, Nothing).ToString)
 									Next
 									'Si el PrimaryKey no esta, envio el delete de la entrada
-									If Not mPrimariesKeyNotDelete.Contains(mPrimaryKeyToDelete) Then
+									If Not mPrimariesKeyNotDelete.Contains(mPrimaryKeyToDelete.ToString) Then
 										Delete(mEntryWithoutCache.Value)
 									End If
 								Next
@@ -1275,7 +1401,7 @@ Public Class ORMHelper
 	Private Shared Sub DeleteAsociations(ByVal pObject As Object, ByVal pClassDefinition As ClassDefinition)
 
 		'Verifico asociaciones
-		If Not pClassDefinition.Asociations Is Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
+		If pClassDefinition.Asociations IsNot Nothing AndAlso pClassDefinition.Asociations.Count > 0 Then
 			For Each mAsociationEntry As Generic.KeyValuePair(Of String, AsociationDefinition) In pClassDefinition.Asociations
 
 				'Verifico si debo hacer algo con la asociación
@@ -1293,11 +1419,11 @@ Public Class ORMHelper
 		End If
 
 		'Verifico diccionarios
-		If Not pClassDefinition.Dictionaries Is Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
+		If pClassDefinition.Dictionaries IsNot Nothing AndAlso pClassDefinition.Dictionaries.Count > 0 Then
 			For Each mDictionaryEntry As Generic.KeyValuePair(Of String, DictionaryDefinition) In pClassDefinition.Dictionaries
 
 				'Relaciones MANY_TO_MANY
-				If mDictionaryEntry.Value.Type = DICTIONARY_TYPE.MANY_TO_MANY And mDictionaryEntry.Value.Asociation.CascadeDelete Then
+				If mDictionaryEntry.Value.Type = DICTIONARY_TYPE.MANY_TO_MANY AndAlso mDictionaryEntry.Value.Asociation.CascadeDelete Then
 
 					If pObject.GetType.GetProperty(mDictionaryEntry.Value.Asociation.Name) Is Nothing Then
 						Throw (New Exception("The property " & mDictionaryEntry.Value.Asociation.Name & " not exists in class " & pObject.GetType.FullName & "."))
@@ -1307,10 +1433,10 @@ Public Class ORMHelper
 
 					'Borro toda la relación MANY_TO_MANY 
 					Dim mDeleteParameterValues As ParameterCollection = GetCompositeIdParameterCollection(pObject, mDictionaryEntry.Value.Asociation.CompositeId)
-					GetIDBProvider.ExecuteNonQuery(mProcedureDelete, mDeleteParameterValues)
+					GetIdbProvider.ExecuteNonQuery(mProcedureDelete, mDeleteParameterValues)
 
 					'Relaciones ONE_TO_MANY
-				ElseIf mDictionaryEntry.Value.Type = DICTIONARY_TYPE.ONE_TO_MANY And mDictionaryEntry.Value.Asociation.CascadeDelete Then
+				ElseIf mDictionaryEntry.Value.Type = DICTIONARY_TYPE.ONE_TO_MANY AndAlso mDictionaryEntry.Value.Asociation.CascadeDelete Then
 
 					Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(mDictionaryEntry.Value.Value.Class)
 					If mClassDefinition Is Nothing Then
@@ -1346,7 +1472,7 @@ Public Class ORMHelper
 						If mSortedHashTable IsNot Nothing Then
 
 							'INICIALIZACION DE ELIMINACION
-							Dim mPrimariesKeyNotDelete As New Generic.List(Of String)
+							'Dim mPrimariesKeyNotDelete As New Generic.List(Of String)
 
 							'ENVIO DE SAVE Y UPDATE
 							For mIndex As Int32 = 0 To mSortedHashTable.Count - 1
@@ -1375,7 +1501,7 @@ Public Class ORMHelper
 
 		For Each mProperty As PropertyDefinition In pCompositeId.Values
 			'Verifico que existan todos los properties del compositeId
-			If pObject.GetType.GetProperty(mProperty.Name) Is Nothing And mProperty.Name.ToLower <> "[null]" Then
+			If pObject.GetType.GetProperty(mProperty.Name) Is Nothing AndAlso mProperty.Name.ToLower <> "[null]" Then
 				Throw (New Exception("The property " & mProperty.Name & " does not exists in class " & pObject.GetType.FullName & "." & System.Environment.NewLine & "This parameter is case-sensitive."))
 			End If
 
@@ -1418,7 +1544,6 @@ Public Class ORMHelper
 #End Region
 
 #Region "IS TEMPORAL KEY"
-	'TODO: Hacer parametro Temp=true en Key de dictionary
 	Private Shared Function IsTemporalKey(ByRef pObject As Object, ByRef pCompositeId As Generic.Dictionary(Of String, PropertyDefinition)) As Boolean
 		For Each mEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pCompositeId
 			If pObject.GetType.GetProperty(mEntry.Key.ToString).PropertyType Is GetType(System.Guid) Then
@@ -1432,6 +1557,15 @@ Public Class ORMHelper
 #End Region
 
 #Region "EXECUTES"
+
+	Public Shared Function ExecuteDataSetText(ByVal pText As String) As DataSet
+		Return ExecuteDataSetText(pText, New ParameterCollection)
+	End Function
+
+	Public Shared Function ExecuteDataSetText(ByVal pText As String, ByVal pParameterCollection As ParameterCollection) As DataSet
+		Return GetIdbProvider.GetISqlHelper.ExecuteDataset(CommandType.Text, pText, pParameterCollection)
+	End Function
+
 	Public Shared Function ExecuteDataSet(ByVal pProcedimiento As String) As DataSet
 		Return ExecuteDataSet(pProcedimiento, New ParameterCollection, 0)
 	End Function
@@ -1450,11 +1584,11 @@ Public Class ORMHelper
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
 		'DH: 2010.05.06: Agrego OR pTimeInCache=0 porque puede ser que exista en WorkSpace, porque LoadObjects lo agrego y si el pTimeInCache=0 nunca se setea la colección.
-		If mRetorno Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(DataSet), pProcedimiento, pParameterCollection)) Or pTimeInCache = 0) Then
+		If mRetorno Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(DataSet), pProcedimiento, pParameterCollection)) OrElse pTimeInCache = 0) Then
 
-			RaiseEvent Before_ExecuteDataSet(pProcedimiento, pParameterCollection)
+			RaiseEvent BeforeExecuteDataSet(pProcedimiento, pParameterCollection)
 
-			mRetorno = GetIDBProvider.ExecuteDataSet(pProcedimiento, pParameterCollection)
+			mRetorno = GetIdbProvider.ExecuteDataSet(pProcedimiento, pParameterCollection)
 
 			If pTimeInCache > 0 Then
 				ObjectHelper.Cache.SaveInWorkSpaces(GetType(DataSet), pProcedimiento, pParameterCollection, pTimeInCache, mRetorno)
@@ -1482,11 +1616,11 @@ Public Class ORMHelper
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
 		'DH: 2010.05.06: Agrego OR pTimeInCache=0 porque puede ser que exista en WorkSpace, porque LoadObjects lo agrego y si el pTimeInCache=0 nunca se setea la colección.
-		If mRetorno Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(ObjectByPage), pProcedimiento, pParameterCollection)) Or pTimeInCache = 0) Then
+		If mRetorno Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(ObjectByPage), pProcedimiento, pParameterCollection)) OrElse pTimeInCache = 0) Then
 
-			RaiseEvent Before_ExecuteDataSet(pProcedimiento, pParameterCollection)
+			RaiseEvent BeforeExecuteDataSet(pProcedimiento, pParameterCollection)
 
-			mRetorno = GetIDBProvider.ExecuteDataSetByPage(pProcedimiento, pParameterCollection)
+			mRetorno = GetIdbProvider.ExecuteDataSetByPage(pProcedimiento, pParameterCollection)
 
 			If pTimeInCache > 0 Then
 				ObjectHelper.Cache.SaveInWorkSpaces(GetType(ObjectByPage), pProcedimiento, pParameterCollection, pTimeInCache, mRetorno)
@@ -1496,17 +1630,17 @@ Public Class ORMHelper
 		Return mRetorno
 	End Function
 
-	Public Shared Function ExecuteScalar(ByVal pProcedimiento As String) As String
+	Public Shared Function ExecuteScalar(ByVal pProcedimiento As String) As Object
 		Return ExecuteScalar(pProcedimiento, New ParameterCollection, 0)
 	End Function
 
-	Public Shared Function ExecuteScalar(ByVal pProcedimiento As String, ByVal pParameterCollection As ParameterCollection) As String
+	Public Shared Function ExecuteScalar(ByVal pProcedimiento As String, ByVal pParameterCollection As ParameterCollection) As Object
 		Return ExecuteScalar(pProcedimiento, pParameterCollection, 0)
 	End Function
 
-	Public Shared Function ExecuteScalar(ByVal pProcedimiento As String, ByVal pParameterCollection As ParameterCollection, ByVal pTimeInCache As Int32) As String
+	Public Shared Function ExecuteScalar(ByVal pProcedimiento As String, ByVal pParameterCollection As ParameterCollection, ByVal pTimeInCache As Int32) As Object
 
-		Dim mRetorno As String = Nothing
+		Dim mRetorno As Object = Nothing
 
 		If pTimeInCache > 0 Then
 			mRetorno = CType(ObjectHelper.Cache.GetByWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(Int32), pProcedimiento, pParameterCollection)), String)
@@ -1514,11 +1648,11 @@ Public Class ORMHelper
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
 		'DH: 2010.05.06: Agrego OR pTimeInCache=0 porque puede ser que exista en WorkSpace, porque LoadObjects lo agrego y si el pTimeInCache=0 nunca se setea la colección.
-		If mRetorno Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(Int32), pProcedimiento, pParameterCollection)) Or pTimeInCache = 0) Then
+		If mRetorno Is Nothing AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(Int32), pProcedimiento, pParameterCollection)) OrElse pTimeInCache = 0) Then
 
-			RaiseEvent Before_Execute(pProcedimiento, pParameterCollection)
+			RaiseEvent BeforeExecute(pProcedimiento, pParameterCollection)
 
-			mRetorno = GetIDBProvider.ExecuteScalar(pProcedimiento, pParameterCollection)
+			mRetorno = GetIdbProvider.ExecuteScalar(pProcedimiento, pParameterCollection)
 
 			If pTimeInCache > 0 Then
 				ObjectHelper.Cache.SaveInWorkSpaces(GetType(Int32), pProcedimiento, pParameterCollection, pTimeInCache, mRetorno)
@@ -1542,9 +1676,9 @@ Public Class ORMHelper
 
 		'Pregunto en Cache.ExistsInWorkSpaces porque puede ser un dato que esta guardado con Nothing
 		'DH: 2010.05.06: Agrego OR pTimeInCache=0 porque puede ser que exista en WorkSpace, porque LoadObjects lo agrego y si el pTimeInCache=0 nunca se setea la colección.
-		If mRetorno = 0 AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(Int32), pText, Nothing)) Or pTimeInCache = 0) Then
+		If mRetorno = 0 AndAlso (Not ObjectHelper.Cache.ExistsInWorkSpaces(ObjectHelper.Cache.GetWorkSpacesKey(GetType(Int32), pText, Nothing)) OrElse pTimeInCache = 0) Then
 
-			RaiseEvent Before_ExecuteText(pText)
+			RaiseEvent BeforeExecuteText(pText)
 
 			mRetorno = GetIDBProvider.ExecuteText(pText)
 
@@ -1558,13 +1692,13 @@ Public Class ORMHelper
 #End Region
 
 #Region "GET NEW IDENTITY"
-	Public Shared Function GetNewIdentity(ByVal pTypeName As String, ByVal pPropertyName As String) As Int64
+	Public Shared Function GetNewIdentity(ByVal pTypeName As String, ByVal pPropertyName As String) As Object
 		Dim mObject As Object = Configuration.GetInstanceByName(pTypeName)
 		Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(mObject)
 
-		If Not mClassDefinition.PrimaryKeys Is Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
+		If mClassDefinition.PrimaryKeys IsNot Nothing AndAlso mClassDefinition.PrimaryKeys.Count > 0 Then
 			For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mClassDefinition.PrimaryKeys
-				If mPrimaryKeyEntry.Value.Generator = "autoincrement" And mPrimaryKeyEntry.Value.Name = pPropertyName Then
+				If mPrimaryKeyEntry.Value.Generator = "autoincrement" AndAlso mPrimaryKeyEntry.Value.Name = pPropertyName Then
 					Return GetNewIdentity(mObject, mPrimaryKeyEntry.Value, mClassDefinition, False, True)
 				End If
 			Next
@@ -1573,26 +1707,31 @@ Public Class ORMHelper
 		Return 0
 	End Function
 
-	Private Shared Function GetNewIdentity(ByVal pObject As Object, ByVal pPrimaryKey As PropertyDefinition, ByVal pClassDefinition As ClassDefinition, ByVal pIdentityPersist As Boolean, ByVal pWithoutIdentityManager As Boolean) As Int64
-		Dim mIdentity As Int64 = Nothing
+	Private Shared Function GetNewIdentity(ByVal pObject As Object, ByVal pPrimaryKey As PropertyDefinition, ByVal pClassDefinition As ClassDefinition, ByVal pIdentityPersist As Boolean, ByVal pWithoutIdentityManager As Boolean) As Object
+		Dim mIdentity As Object = Nothing
+		Dim mTypeStr As String = pObject.GetType.GetProperty(pPrimaryKey.Name).PropertyType.Name.ToLower
 
 		If pPrimaryKey.Generator_Cache Then
-			Dim mIdentityKey As String = pObject.GetType.FullName & "-" & pPrimaryKey.Name
+			Dim mIdentityKey As String
+			Dim mIdentityKeySB As New Text.StringBuilder
+			mIdentityKeySB.Append(pObject.GetType.FullName & "-" & pPrimaryKey.Name)
 
 			If pClassDefinition.PrimaryKeys.Count > 1 Then
 				For Each mPrimaryKeyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.PrimaryKeys
 					If mPrimaryKeyEntry.Value.Generator <> "autoincrement" Then
 						Dim mObject As Object = pObject.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(pObject, Nothing)
-						mIdentityKey += "-" & mObject.ToString
+						mIdentityKeySB.Append("-" & mObject.ToString)
 					End If
 				Next
 			End If
+
+			mIdentityKey = mIdentityKeySB.ToString
 
 			'Configuro para single threading
 			SyncLock (mIndentityCache)
 
 				'Verifico si el nuevo identificador esta en cache
-				If Not mIndentityCache.ContainsKey(mIdentityKey) Or Not pIdentityPersist Then
+				If Not mIndentityCache.ContainsKey(mIdentityKey) OrElse Not pIdentityPersist Then
 					mIdentity = GetIDBProvider.GetNewIdentity(pObject, pClassDefinition)
 				End If
 
@@ -1600,7 +1739,16 @@ Public Class ORMHelper
 					If Not mIndentityCache.ContainsKey(mIdentityKey) Then
 						mIndentityCache.Add(mIdentityKey, mIdentity)
 					Else
-						mIdentity = mIndentityCache(mIdentityKey) + 1
+						Select Case mTypeStr
+							Case "int32"
+								mIdentity = CType(mIndentityCache(mIdentityKey), Int32) + 1
+							Case "int64"
+								mIdentity = CType(mIndentityCache(mIdentityKey), Int64) + 1
+							Case "decimal"
+								mIdentity = CType(mIndentityCache(mIdentityKey), Decimal) + 1
+							Case Else
+								mIdentity = CType(mIndentityCache(mIdentityKey), Int32) + 1
+						End Select
 						mIndentityCache(mIdentityKey) = mIdentity
 					End If
 				End If
@@ -1618,22 +1766,32 @@ Public Class ORMHelper
 				mIdentity = pPrimaryKey.IIdentityManager.GetNewIdentity(pObject.GetType.FullName & ", " & pObject.GetType.Assembly.GetName.Name, pPrimaryKey.Name)
 			End If
 
-			Return mIdentity
+			Select Case mTypeStr
+				Case "int32"
+					Return CType(mIdentity, Int32)
+				Case "int64"
+					Return CType(mIdentity, Int64)
+				Case "decimal"
+					Return CType(mIdentity, Decimal)
+				Case Else
+					Return CType(mIdentity, Int32)
+			End Select
 		End If
 	End Function
+
 #End Region
 
 #Region "CONNECTIONS"
 
 #Region "SET I DB CONNECTION"
-	Public Shared Sub ClearIDBConnection()
-		GetIDBProvider.ClearIDBConnection()
+	Public Shared Sub ClearIdbConnection()
+		GetIdbProvider.ClearIdbConnection()
 	End Sub
 #End Region
 
 #Region "DISPOSE I DB CONNECTION"
-	Public Shared Sub DisposeIDBConnection()
-		GetIDBProvider.DisposeIDBConnection()
+	Public Shared Sub DisposeIdbConnection()
+		GetIdbProvider.DisposeIdbConnection()
 	End Sub
 #End Region
 
@@ -1688,9 +1846,12 @@ Public Class ORMHelper
 #End Region
 
 #Region "CLEAR CACHE THREE"
-
 	Public Shared Sub ClearCacheThree(ByVal pObject As Object)
-		If pObject IsNot Nothing Then
+		ClearCacheThree(pObject, 0)
+	End Sub
+
+	Public Shared Sub ClearCacheThree(ByVal pObject As Object, ByVal pDepth As Int32)
+		If pObject IsNot Nothing AndAlso pDepth < mMaxDepth Then
 			ClearCache(pObject)
 
 			Dim mClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pObject)
@@ -1699,12 +1860,12 @@ Public Class ORMHelper
 			If mClassDefinition.Asociations IsNot Nothing AndAlso mClassDefinition.Asociations.Count > 0 Then
 				For Each mAsociationEntry As Generic.KeyValuePair(Of String, AsociationDefinition) In mClassDefinition.Asociations
 					'Obtengo el objeto de la asociación
-					ClearCacheThree(pObject.GetType.GetProperty(mAsociationEntry.Value.Name).GetValue(pObject, Nothing))
+					ClearCacheThree(pObject.GetType.GetProperty(mAsociationEntry.Value.Name).GetValue(pObject, Nothing), pDepth + 1)
 				Next
 			End If
 
 			'Verifico diccionarios
-			If Not mClassDefinition.Dictionaries Is Nothing AndAlso mClassDefinition.Dictionaries.Count > 0 Then
+			If mClassDefinition.Dictionaries IsNot Nothing AndAlso mClassDefinition.Dictionaries.Count > 0 Then
 				For Each mDictionaryEntry As Generic.KeyValuePair(Of String, DictionaryDefinition) In mClassDefinition.Dictionaries
 
 					If mDictionaryEntry.Value.Type = DICTIONARY_TYPE.MANY_TO_MANY Then
@@ -1722,7 +1883,7 @@ Public Class ORMHelper
 									If mHashTable(mKey).GetType.GetProperty(mDictionaryEntry.Value.Key.Value) Is Nothing Then
 										Throw (New Exception("Dictionary " & mDictionaryEntry.Key & " in class " & pObject.GetType.FullName & " is incorrect. The property " & mDictionaryEntry.Value.Key.Value & " not exists in " & mHashTable(mKey).GetType.FullName))
 									End If
-									ClearCacheThree(mHashTable.Item(mKey))
+									ClearCacheThree(mHashTable.Item(mKey), pDepth + 1)
 								Next
 							End If
 
@@ -1736,7 +1897,7 @@ Public Class ORMHelper
 									If mObjectItem.GetType.GetProperty(mDictionaryEntry.Value.Key.Value) Is Nothing Then
 										Throw (New Exception("Dictionary " & mDictionaryEntry.Key & " in class " & pObject.GetType.FullName & " is incorrect. The property " & mDictionaryEntry.Value.Key.Value & " not exists in " & mObjectItem.GetType.FullName))
 									End If
-									ClearCacheThree(mObjectItem)
+									ClearCacheThree(mObjectItem, pDepth + 1)
 								Next
 							End If
 
@@ -1753,7 +1914,7 @@ Public Class ORMHelper
 
 							If mHashTable IsNot Nothing Then
 								For Each mEntry As DictionaryEntry In mHashTable
-									ClearCacheThree(mEntry.Value)
+									ClearCacheThree(mEntry.Value, pDepth + 1)
 								Next
 							End If
 
@@ -1768,7 +1929,7 @@ Public Class ORMHelper
 									If mObjectItem.GetType.GetProperty(mDictionaryEntry.Value.Key.Value) Is Nothing Then
 										Throw (New Exception("Dictionary " & mDictionaryEntry.Key & " in class " & pObject.GetType.FullName & " is incorrect. The property " & mDictionaryEntry.Value.Key.Value & " not exists in " & mObjectItem.GetType.FullName))
 									End If
-									ClearCacheThree(mObjectItem)
+									ClearCacheThree(mObjectItem, pDepth + 1)
 								Next
 							End If
 						End If
@@ -1805,7 +1966,6 @@ Public Class ORMHelper
 #End Region
 
 #Region "RESIZE ARRAY"
-	'TODO: Pasar a Conversiones
 	Public Shared Function ResizeArray(ByVal pType As System.Type, ByVal pArray As Object(), ByVal pNewSize As Int32) As Object()
 		Dim mObjects As Object() = CType(Array.CreateInstance(pType, pNewSize), Object())
 
@@ -1837,6 +1997,12 @@ Public Class ORMHelper
 			pPropertyInfo.SetValue(pObject, Nothing, Nothing)
 		End If
 	End Sub
+#End Region
+
+#Region "RESET IDENTITY CACHE"
+    Public Shared Sub ResetIdentityCache()
+        mIndentityCache = New Generic.Dictionary(Of String, Object)
+    End Sub
 #End Region
 
 End Class

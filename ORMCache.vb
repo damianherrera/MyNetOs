@@ -49,25 +49,27 @@ Public Class ORMCache
 
 #Region "RESET CACHE"
 
-  Public Sub ResetCache()
-    'Vacio workspaces
-    Dim mEnumerator As IDictionaryEnumerator = WorkSpaces.WorkSpace.GetEnumerator
-    Dim mKeyList As New Generic.List(Of String)
-    mEnumerator.Reset()
-    While mEnumerator.MoveNext
-      If mEnumerator.Key.ToString.IndexOf(mGlobalWorkSpacesName) > -1 Then
-        mKeyList.Add(mEnumerator.Key.ToString)
-      End If
-    End While
+    Public Sub ResetCache()
+        'Vacio workspaces
+        Dim mEnumerator As IDictionaryEnumerator = WorkSpaces.WorkSpace.GetEnumerator
+        Dim mKeyList As New Generic.List(Of String)
+        SyncLock mEnumerator
+            mEnumerator.Reset()
+            While mEnumerator.MoveNext
+                If mEnumerator.Key.ToString.IndexOf(mGlobalWorkSpacesName) > -1 Then
+                    mKeyList.Add(mEnumerator.Key.ToString)
+                End If
+            End While
+        End SyncLock
 
-    For Each mKey As String In mKeyList
-      WorkSpaces.WorkSpace.GlobalRemove(mKey)
-    Next
+        For Each mKey As String In mKeyList
+            WorkSpaces.WorkSpace.GlobalRemove(mKey)
+        Next
 
-    If Context.Count > 0 Then
-      Context.ClearAll()
-    End If
-  End Sub
+        If Context.Count > 0 Then
+            Context.ClearAll()
+        End If
+    End Sub
 #End Region
 
 #Region "CLEAR CACHE"
@@ -157,34 +159,32 @@ Public Class ORMCache
 		If ORMManager.Configuration.Caching Then
 			Dim mKey As String = GetWorkSpacesKey(pObject)
 			If mDependenceDictionary.ContainsKey(mKey) Then
-				mDependenceDictionary.Item(mKey) += ";" + pKey
-			Else
+                mDependenceDictionary.Item(mKey) += ";" & pKey
+            Else
 				mDependenceDictionary.Add(mKey, pKey)
 			End If
 		End If
 	End Sub
 
 	Friend Sub ClearDependence(ByVal pKey As String)
-		If ORMManager.Configuration.Caching Then
-			If mDependenceDictionary.ContainsKey(pKey) Then
-				mDependenceDictionary.Remove(pKey)
-			End If
-		End If
-	End Sub
+        If ORMManager.Configuration.Caching AndAlso
+            mDependenceDictionary.ContainsKey(pKey) Then
+
+            mDependenceDictionary.Remove(pKey)
+        End If
+    End Sub
 
 	Friend Sub ClearCacheWorkSpaceDependences(ByVal pKey As String)
-		If ORMManager.Configuration.Caching Then
-			If mDependenceDictionary.ContainsKey(pKey) Then
-				Dim mKeys As String = mDependenceDictionary.Item(pKey)
-				For Each mStr As String In mKeys.Split(CType(";", Char))
-					If mStr <> "" Then
-						WorkSpaces.WorkSpace.GlobalRemove(mGlobalWorkSpacesName & "-" & mStr)
-					End If
-				Next
-				ClearDependence(pKey)
-			End If
-		End If
-	End Sub
+        If ORMManager.Configuration.Caching AndAlso mDependenceDictionary.ContainsKey(pKey) Then
+            Dim mKeys As String = mDependenceDictionary.Item(pKey)
+            For Each mStr As String In mKeys.Split(CType(";", Char))
+                If mStr <> "" Then
+                    WorkSpaces.WorkSpace.GlobalRemove(mGlobalWorkSpacesName & "-" & mStr)
+                End If
+            Next
+            ClearDependence(pKey)
+        End If
+    End Sub
 
 #Region "GET WORK SPACES KEY"
 
@@ -201,8 +201,8 @@ Public Class ORMCache
 							mKey.Append("-" & pObject.GetType.GetProperty(mPrimaryKeyEntry.Value.Name).GetValue(pObject, Nothing).ToString)
 						Next
 					Else
-						Throw ((New Exception("The type " & pObject.GetType.FullName & " don't have primary key.")))
-					End If
+                        Throw (New Exception("The type " & pObject.GetType.FullName & " don't have primary key."))
+                    End If
 					mPrimaryKeyValue = mKey.ToString
 				End If
 			Else

@@ -11,7 +11,7 @@ Public Class PropertyDefinition
 	Private mGenerator As String
 	Private mGenerator_Cache As Boolean
 	Private mAssembly As String
-	Private mIIdentityManager As Orm.IIdentityManager
+	Private mIIdentityManager As IIdentityManager
 	Private mRule As String
 	Private mRule_Group As String
 	Private mRule_Data As String
@@ -91,11 +91,11 @@ Public Class PropertyDefinition
 		End Set
 	End Property
 
-	Public Property IIdentityManager() As Orm.IIdentityManager
+	Public Property IIdentityManager() As IIdentityManager
 		Get
 			Return mIIdentityManager
 		End Get
-		Set(ByVal value As Orm.IIdentityManager)
+		Set(ByVal value As IIdentityManager)
 			mIIdentityManager = value
 		End Set
 	End Property
@@ -129,7 +129,7 @@ Public Class PropertyDefinition
 
 	Public ReadOnly Property IsValidable() As Boolean
 		Get
-			Return (Not mRule Is Nothing And mRule <> "")
+			Return (mRule IsNot Nothing AndAlso mRule <> "")
 		End Get
 	End Property
 
@@ -185,7 +185,7 @@ Public Class PropertyDefinition
 
 		If pXmlNode.Attributes("assembly") IsNot Nothing Then
 			mAssembly = pXmlNode.Attributes("assembly").Value
-			mIIdentityManager = TryCast(Configuration.GetInstanceByName(mAssembly), Orm.IIdentityManager)
+			mIIdentityManager = TryCast(Configuration.GetInstanceByName(mAssembly), IIdentityManager)
 			If mIIdentityManager Is Nothing Then
 				Throw (New Exception("The assembly in Property " & mName & " not implement IIdentityManager Interface."))
 			Else

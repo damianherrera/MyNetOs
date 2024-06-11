@@ -138,13 +138,7 @@ Public Class ActionDefinition
 	End Sub
 
 	Public Sub New(ByVal pXmlNode As Xml.XmlNode)
-		Select Case pXmlNode.Attributes("type").Value
-			Case Is = "request"
-				mType = ACTION_TYPE.REQUEST
-			Case Else
-				mType = ACTION_TYPE.REQUEST
-		End Select
-
+		mType = ACTION_TYPE.REQUEST
 		mData = pXmlNode.Attributes("data").Value
 		mSave = pXmlNode.Attributes("save").Value
 
@@ -211,45 +205,46 @@ Public Class ActionDefinition
 			Next
 		End If
 
-		If System.Web.HttpContext.Current IsNot Nothing Then
-			'TRANSLATE URIS & PATHS
-			Select Case mType
-				Case ACTION_TYPE.REQUEST
-					mData = ToAbsoluteUrl(mData)
-			End Select
-			mSave = System.Web.Hosting.HostingEnvironment.MapPath(mSave)
-		End If
+		'2023.12.29
+		'If System.Web.HttpContext.Current IsNot Nothing Then
+		'	'TRANSLATE URIS & PATHS
+		'	Select Case mType
+		'		Case ACTION_TYPE.REQUEST
+		'			mData = ToAbsoluteUrl(mData)
+		'	End Select
+		'	mSave = System.Web.Hosting.HostingEnvironment.MapPath(mSave)
+		'End If
 
 	End Sub
 #End Region
 
 #Region "TO ABSOLUTE URL"
-	Public Shared Function ToAbsoluteUrl(ByVal pRelativeUrl As String) As String
-		If String.IsNullOrEmpty(pRelativeUrl) Then
-			Return pRelativeUrl
-		End If
+	'Public Shared Function ToAbsoluteUrl(ByVal pRelativeUrl As String) As String
+	'	If String.IsNullOrEmpty(pRelativeUrl) Then
+	'		Return pRelativeUrl
+	'	End If
 
-		If System.Web.HttpContext.Current Is Nothing Then
-			Return pRelativeUrl
-		End If
+	'	If System.Web.HttpContext.Current Is Nothing Then
+	'		Return pRelativeUrl
+	'	End If
 
-		If pRelativeUrl.StartsWith("/") Then
-			pRelativeUrl = pRelativeUrl.Insert(0, "~")
-		End If
-		If Not pRelativeUrl.StartsWith("~/") Then
-			pRelativeUrl = pRelativeUrl.Insert(0, "~/")
-		End If
+	'	If pRelativeUrl.StartsWith("/") Then
+	'		pRelativeUrl = pRelativeUrl.Insert(0, "~")
+	'	End If
+	'	If Not pRelativeUrl.StartsWith("~/") Then
+	'		pRelativeUrl = pRelativeUrl.Insert(0, "~/")
+	'	End If
 
-		Dim mUrl As Uri = System.Web.HttpContext.Current.Request.Url
-		Dim mPort As String
-		If mUrl.Port <> 80 Then
-			mPort = ":" & mUrl.Port
-		Else
-			mPort = String.Empty
-		End If
+	'	Dim mUrl As Uri = System.Web.HttpContext.Current.Request.Url
+	'	Dim mPort As String
+	'	If mUrl.Port <> 80 Then
+	'		mPort = ":" & mUrl.Port
+	'	Else
+	'		mPort = String.Empty
+	'	End If
 
-		Return String.Format("{0}://{1}{2}{3}", mUrl.Scheme, mUrl.Host, mPort, System.Web.VirtualPathUtility.ToAbsolute(pRelativeUrl))
-	End Function
+	'	Return String.Format("{0}://{1}{2}{3}", mUrl.Scheme, mUrl.Host, mPort, System.Web.VirtualPathUtility.ToAbsolute(pRelativeUrl))
+	'End Function
 #End Region
 
 End Class

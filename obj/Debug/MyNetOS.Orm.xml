@@ -1,0 +1,87 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+MyNetOS.Orm
+</name>
+</assembly>
+<members>
+<member name="M:MyNetOS.Orm.ORMHelper.ReplicateSave(System.Object)">
+	<summary>
+ Tiene la misma funcionalidad que Save excepto que no persiste en cache. 
+ Solo sirve para hacer Saves sin cache. Ideal para operaciones remotas.
+ </summary>
+	<param name="pObject"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.ORMHelper.ReplicateUpdate(System.Object)">
+	<summary>
+ Tiene la misma funcionalidad que Update excepto que no persiste en cache. 
+ Solo sirve para hacer Update sin cache. Ideal para operaciones remotas.
+ </summary>
+	<param name="pObject"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.ORMHelper.ReplicateDelete(System.Object)">
+	<summary>
+ Tiene la misma funcionalidad que Delete excepto que no persiste en cache. 
+ Solo sirve para hacer Delete sin cache. Ideal para operaciones remotas.
+ </summary>
+	<param name="pObject"></param>
+	<remarks></remarks>
+</member><member name="P:MyNetOS.Orm.My.Resources.Resources.ResourceManager">
+	<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member><member name="P:MyNetOS.Orm.My.Resources.Resources.Culture">
+	<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member><member name="T:MyNetOS.Orm.My.Resources.Resources">
+	<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member><member name="T:MyNetOS.Orm.Types.SortedHashTable">
+	<summary>
+ Estae tipo de dato es similar al SortedList (unifica Array y Hashtable) pero asegura
+ la consistencia de datos al eliminar, modificar y agregar registros.
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.Misc.ObjectHelper.CreateInstance(System.Object)">
+	<summary>
+ Crea una instancia a partir de un Object
+ </summary>
+	<param name="pObject"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.Misc.ObjectHelper.CreateInstance(System.Type)">
+	<summary>
+ Crea instancia a partir del Type
+ </summary>
+	<param name="pType"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.Misc.ObjectHelper.CreateInstance(System.Reflection.Assembly,System.String)">
+	<summary>
+ Crea instancia a partir del Assembly y el FullName
+ </summary>
+	<param name="pAssembly"></param>
+	<param name="pFullName"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.Misc.Utilities.CopyObject(System.Object,System.Object)">
+	<summary>
+ Genera una nueva instancia del objeto origen en la referencia del objeto destino sin conservar las referencias en las asociaciones.
+ </summary>
+	<param name="pObjectSrc"></param>
+	<param name="pObjectDest"></param>
+	<remarks></remarks>
+</member><member name="M:MyNetOS.Orm.Misc.Utilities.CloneObject(System.Object,System.Object)">
+	<summary>
+ Genera una nueva instancia del objeto origen en la referencia del objeto destino conservando las referencias en las asociaciones.
+ </summary>
+	<param name="pObjectSrc"></param>
+	<param name="pObjectDest"></param>
+	<remarks></remarks>
+</member>
+</members>
+</doc>

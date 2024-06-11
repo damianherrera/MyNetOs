@@ -70,10 +70,10 @@ Namespace Validator
 #Region "GET VALIDATOR SUMMARY CONFIG"
 
     Private Shared Function GetValidatorSummaryConfig() As IValidatorSummary
-      If ORMManager.Configuration.ExistsValidator AndAlso Not ORMManager.Configuration.ValidatorSummary Is Nothing Then
-        Return CType(ORMManager.Configuration.ValidatorSummaryType.Assembly.CreateInstance(ORMManager.Configuration.ValidatorSummaryType.FullName, True), IValidatorSummary)
-      Else
-        Return Nothing
+            If ORMManager.Configuration.ExistsValidator AndAlso ORMManager.Configuration.ValidatorSummary IsNot Nothing Then
+                Return CType(ORMManager.Configuration.ValidatorSummaryType.Assembly.CreateInstance(ORMManager.Configuration.ValidatorSummaryType.FullName, True), IValidatorSummary)
+            Else
+                Return Nothing
       End If
     End Function
 #End Region
@@ -81,10 +81,10 @@ Namespace Validator
 #Region "GET VALIDATOR GLOBALIZATION TEXT CONFIG"
 
     Private Shared Function GetValidatorGlobalizationTextConfig() As IGlobalizationText
-      If ORMManager.Configuration.ExistsValidator AndAlso Not ORMManager.Configuration.ValidatorGlobalizationText Is Nothing Then
-        Return CType(ORMManager.Configuration.ValidatorGlobalizationTextType.Assembly.CreateInstance(ORMManager.Configuration.ValidatorGlobalizationTextType.FullName, True), IGlobalizationText)
-      Else
-        Return Nothing
+            If ORMManager.Configuration.ExistsValidator AndAlso ORMManager.Configuration.ValidatorGlobalizationText IsNot Nothing Then
+                Return CType(ORMManager.Configuration.ValidatorGlobalizationTextType.Assembly.CreateInstance(ORMManager.Configuration.ValidatorGlobalizationTextType.FullName, True), IGlobalizationText)
+            Else
+                Return Nothing
       End If
     End Function
 #End Region

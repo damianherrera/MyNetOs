@@ -108,7 +108,7 @@ Public Class AsociationDefinition
 			Dim mProperty As New PropertyDefinition
 			mProperty.Name = pXmlNode.Attributes("property").Value
 
-			If Not pXmlNode.Attributes("parameter") Is Nothing Then
+			If pXmlNode.Attributes("parameter") IsNot Nothing Then
 				mProperty.Parameter = pXmlNode.Attributes("parameter").Value
 			Else
 				mProperty.Parameter = mProperty.Name
@@ -117,13 +117,13 @@ Public Class AsociationDefinition
 			mCompositeId.Add(mProperty.Name, mProperty)
 		End If
 
-		If Not pXmlNode.Attributes("class") Is Nothing Then
+		If pXmlNode.Attributes("class") IsNot Nothing Then
 			mClass = pXmlNode.Attributes("class").Value
 		Else
 			mClass = Nothing
 		End If
 
-		If Not pXmlNode.Attributes("table") Is Nothing Then
+		If pXmlNode.Attributes("table") IsNot Nothing Then
 			mTable = pXmlNode.Attributes("table").Value
 		Else
 			mTable = Nothing

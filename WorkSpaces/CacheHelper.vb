@@ -24,11 +24,11 @@ Namespace WorkSpaces
 
 				Return Cache.Item(pKey)
 			End Get
-			Set(ByVal Value As Object)
+			Set(ByVal value As Object)
 				Dim mSlidingExpirationMinutes As TimeSpan
 				Dim mAbsoluteExpiration As DateTime = Cache.NoAbsoluteExpiration
 
-				If pSlidingExpirationMinutes <> 0 And pExpirationDate = DateTime.MinValue Then
+				If pSlidingExpirationMinutes <> 0 AndAlso pExpirationDate = DateTime.MinValue Then
 					mSlidingExpirationMinutes = TimeSpan.FromMinutes(pSlidingExpirationMinutes)
 				ElseIf pExpirationDate <> DateTime.MinValue Then
 					mSlidingExpirationMinutes = Cache.NoSlidingExpiration
@@ -37,7 +37,7 @@ Namespace WorkSpaces
 					mSlidingExpirationMinutes = SlidingExpiration
 				End If
 
-				Cache.Insert(pKey, Value, mAbsoluteExpiration, mSlidingExpirationMinutes, pSessionId)
+				Cache.Insert(pKey, value, mAbsoluteExpiration, mSlidingExpirationMinutes, pSessionId)
 			End Set
 		End Property
 #End Region
@@ -48,8 +48,8 @@ Namespace WorkSpaces
 			Get
 				Return mSlidingExpiration
 			End Get
-			Set(ByVal Value As TimeSpan)
-				mSlidingExpiration = Value
+			Set(ByVal value As TimeSpan)
+				mSlidingExpiration = value
 			End Set
 		End Property
 #End Region

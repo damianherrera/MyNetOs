@@ -15,10 +15,9 @@ Namespace Misc
 
 			Dim mPropiedades As System.Reflection.PropertyInfo() = pType.GetProperties(BindingFlags.Public Or BindingFlags.DeclaredOnly Or BindingFlags.Instance)
 			For i As Integer = 0 To mPropiedades.Length - 1
-				If mPropiedades(i).PropertyType IsNot GetType(System.IO.Stream) And Not mPropiedades(i).PropertyType.IsSubclassOf(GetType(System.IO.Stream)) Then
-					If Not (pSkipProperties IsNot Nothing AndAlso Array.IndexOf(pSkipProperties, mPropiedades(i).Name) > -1) Then
-						mParameterCollection.Add(mPropiedades(i).Name, mPropiedades(i).GetValue(pObject, Nothing))
-					End If
+				If mPropiedades(i).PropertyType IsNot GetType(System.IO.Stream) AndAlso Not mPropiedades(i).PropertyType.IsSubclassOf(GetType(System.IO.Stream)) AndAlso
+					 Not (pSkipProperties IsNot Nothing AndAlso Array.IndexOf(pSkipProperties, mPropiedades(i).Name) > -1) Then
+					mParameterCollection.Add(mPropiedades(i).Name, mPropiedades(i).GetValue(pObject, Nothing))
 				End If
 			Next
 

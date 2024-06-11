@@ -19,14 +19,14 @@ Friend Class SQLProcedureProvider
 		mCommandWhere.Append(" FROM [" & pClassDefinition.Table & "] WITH(NOLOCK) WHERE")
 
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.Properities
-			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) And Not mPropertyEntry.Value.Calculated Then
+			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) AndAlso Not mPropertyEntry.Value.Calculated Then
 				Throw (New Exception("The " & mPropertyEntry.Value.Parameter & " not found in table " & mTableDefinition.Name & ". This parameter is case sensitive."))
 			End If
 			If Not mPropertyEntry.Value.Calculated Then
 				Dim mFieldDefinition As FieldDefinition = mTableDefinition.Fields(mPropertyEntry.Value.Parameter)
 				mCommandStr.Append(mPropertyEntry.Value.Parameter & ",")
 
-				If mFieldDefinition.Type <> SqlDbType.NText And mFieldDefinition.Type <> SqlDbType.Text Then
+				If mFieldDefinition.Type <> SqlDbType.NText AndAlso mFieldDefinition.Type <> SqlDbType.Text Then
 					mCommandWhere.Append(" AND (@" & mPropertyEntry.Value.Name & " IS NULL OR " & mPropertyEntry.Value.Parameter & "=@" & mPropertyEntry.Value.Name & ")")
 					mCommand.Parameters.Add("@" & mPropertyEntry.Value.Name, CType(mFieldDefinition.Type, SqlDbType))
 					mCommand.Parameters("@" & mPropertyEntry.Value.Name).Value = DBNull.Value
@@ -70,7 +70,7 @@ Friend Class SQLProcedureProvider
 		mCommandWhere.Append(" FROM [" & pClassDefinition.Table & "]  WITH(NOLOCK) WHERE")
 
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.Properities
-			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) And Not mPropertyEntry.Value.Calculated Then
+			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) AndAlso Not mPropertyEntry.Value.Calculated Then
 				Throw (New Exception("The " & mPropertyEntry.Value.Parameter & " not found in table " & mTableDefinition.Name & ". This parameter is case sensitive."))
 			End If
 
@@ -78,7 +78,7 @@ Friend Class SQLProcedureProvider
 				Dim mFieldDefinition As FieldDefinition = mTableDefinition.Fields(mPropertyEntry.Value.Parameter)
 				mCommandStr.Append(mPropertyEntry.Value.Parameter & ",")
 
-				If mFieldDefinition.Type <> SqlDbType.NText And mFieldDefinition.Type <> SqlDbType.Text Then
+				If mFieldDefinition.Type <> SqlDbType.NText AndAlso mFieldDefinition.Type <> SqlDbType.Text Then
 					mCommandWhere.Append(" AND (@" & mPropertyEntry.Value.Name & " IS NULL OR " & mPropertyEntry.Value.Parameter & "=@" & mPropertyEntry.Value.Name & ")")
 					mCommand.Parameters.Add("@" & mPropertyEntry.Value.Name, CType(mFieldDefinition.Type, SqlDbType))
 					mCommand.Parameters("@" & mPropertyEntry.Value.Name).Value = DBNull.Value
@@ -122,7 +122,7 @@ Friend Class SQLProcedureProvider
 		mCommandStrAux.Append("VALUES (")
 
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.Properities
-			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) And Not mPropertyEntry.Value.Calculated Then
+			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) AndAlso Not mPropertyEntry.Value.Calculated Then
 				Throw (New Exception("The " & mPropertyEntry.Value.Parameter & " not found in table " & mTableDefinition.Name & ". This parameter is case sensitive."))
 			End If
 
@@ -175,7 +175,7 @@ Friend Class SQLProcedureProvider
 		mCommandStrAux.Append(" WHERE")
 
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.Properities
-			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) And Not mPropertyEntry.Value.Calculated Then
+			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) AndAlso Not mPropertyEntry.Value.Calculated Then
 				Throw (New Exception("The " & mPropertyEntry.Value.Parameter & " not found in table " & mTableDefinition.Name & ". This parameter is case sensitive."))
 			End If
 
@@ -284,7 +284,7 @@ Friend Class SQLProcedureProvider
 		mCommandStrAux.Append(" WHERE")
 
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In pClassDefinition.Properities
-			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) And Not mPropertyEntry.Value.Calculated Then
+			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) AndAlso Not mPropertyEntry.Value.Calculated Then
 				Throw (New Exception("The " & mPropertyEntry.Value.Parameter & " not found in table " & mTableDefinition.Name & ". This parameter is case sensitive."))
 			End If
 
@@ -347,7 +347,7 @@ Friend Class SQLProcedureProvider
 				mCommandStrAux.Append(" AND " & mPrimaryKeyEntry.Value.Parameter & "=@" & mPrimaryKeyEntry.Value.Name)
 				mCommand.Parameters.Add("@" & mPrimaryKeyEntry.Value.Name, CType(mFieldDefinition.Type, SqlDbType))
 			Else
-				Dim mFieldDefinition As FieldDefinition = mTableDefinition.Fields(mPrimaryKeyEntry.Value.Parameter)
+				'Dim mFieldDefinition As FieldDefinition = mTableDefinition.Fields(mPrimaryKeyEntry.Value.Parameter)
 				mCommandStr.Append(" ISNULL(MAX(" & mPrimaryKeyEntry.Value.Parameter & "), 0)+1")
 			End If
 		Next
@@ -384,14 +384,14 @@ Friend Class SQLProcedureProvider
 		Next
 
 		For Each mPropertyEntry As Generic.KeyValuePair(Of String, PropertyDefinition) In mValueClassDefinition.Properities
-			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) And Not mPropertyEntry.Value.Calculated Then
+			If Not mTableDefinition.Fields.ContainsKey(mPropertyEntry.Value.Parameter) AndAlso Not mPropertyEntry.Value.Calculated Then
 				Throw (New Exception("The " & mPropertyEntry.Value.Parameter & " not found in table " & mTableDefinition.Name & ". This parameter is case sensitive."))
 			End If
 
 			Dim mFieldDefinition As FieldDefinition = mTableDefinition.Fields(mPropertyEntry.Value.Parameter)
 			mCommandStr.Append(mPropertyEntry.Value.Parameter & ",")
 
-			If mFieldDefinition.Type <> SqlDbType.NText And mFieldDefinition.Type <> SqlDbType.Text Then
+			If mFieldDefinition.Type <> SqlDbType.NText AndAlso mFieldDefinition.Type <> SqlDbType.Text Then
 				mCommandStrAux.Append(" AND (@" & mPropertyEntry.Value.Name & " IS NULL OR " & mPropertyEntry.Value.Parameter & "=@" & mPropertyEntry.Value.Name & ")")
 				mCommand.Parameters.Add("@" & mPropertyEntry.Value.Name, CType(mFieldDefinition.Type, SqlDbType))
 				mCommand.Parameters("@" & mPropertyEntry.Value.Name).Value = DBNull.Value
@@ -444,7 +444,7 @@ Friend Class SQLProcedureProvider
 		Dim mCommandStr As New Text.StringBuilder
 		Dim mCommandStrAux As New Text.StringBuilder
 		Dim mTableAsociationDefinition As TableDefinition = ProviderFactory.GetSchemaProvider.GetTableDefinition(pDictionary.Asociation.Table)
-		Dim mValueClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pDictionary.Value.Class)
+		'Dim mValueClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pDictionary.Value.Class)
 
 		mCommandStr.Append("INSERT INTO [" & pDictionary.Asociation.Table & "] (")
 		mCommandStrAux.Append("VALUES (")
@@ -502,7 +502,7 @@ Friend Class SQLProcedureProvider
 		Dim mCommandStr As New Text.StringBuilder
 		Dim mCommandStrAux As New Text.StringBuilder
 		Dim mTableAsociationDefinition As TableDefinition = ProviderFactory.GetSchemaProvider.GetTableDefinition(pDictionary.Asociation.Table)
-		Dim mValueClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pDictionary.Value.Class)
+		'Dim mValueClassDefinition As ClassDefinition = ORMManager.GetClassDefinition(pDictionary.Value.Class)
 
 		mCommandStr.Append("DELETE FROM [" & pDictionary.Asociation.Table & "] ")
 		mCommandStrAux.Append(" WHERE")

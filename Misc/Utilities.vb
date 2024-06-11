@@ -1,19 +1,21 @@
 Imports System.Reflection
 Imports MyNetOS.ORM.Types
+Imports System.Web
+Imports System.Text.RegularExpressions
 
 Namespace Misc
 
 	Public Class Utilities
 
 #Region "FIELDS"
-    'Cache de Schemas Datasets
+		'Cache de Schemas Datasets
 		Private Shared mCollection As Hashtable = Hashtable.Synchronized(New Hashtable)
 #End Region
 
 #Region "GET DATASET"
 
 		Public Shared Function GetDataSet(ByVal pType As System.Type) As DataSet
-			If Not pType Is Nothing Then
+			If pType IsNot Nothing Then
 
 				'Si el DataSet no existe en la collection, lo armo por reflection
 				If Not mCollection.Contains(pType.Name) Then
@@ -22,7 +24,7 @@ Namespace Misc
 					Dim mDataTable As New DataTable("T_" & pType.Name)
 
 					For i As Integer = 0 To mPropiedades.Length - 1
-						If mPropiedades(i).PropertyType IsNot GetType(IO.Stream) And Not mPropiedades(i).PropertyType.IsSubclassOf(GetType(IO.Stream)) Then
+						If mPropiedades(i).PropertyType IsNot GetType(IO.Stream) AndAlso Not mPropiedades(i).PropertyType.IsSubclassOf(GetType(IO.Stream)) Then
 							mDataTable.Columns.Add(New DataColumn(mPropiedades(i).Name, mPropiedades(i).PropertyType))
 						End If
 					Next
@@ -40,27 +42,27 @@ Namespace Misc
 #End Region
 
 #Region "POPULATE DATASET"
-    Public Shared Function PopulateDataSet(ByVal pType As System.Type, ByVal pObjectByPage As ObjectByPage) As DataSet
+		Public Shared Function PopulateDataSet(ByVal pType As System.Type, ByVal pObjectByPage As ObjectByPage) As DataSet
 
-      Dim mDataset As DataSet
+			Dim mDataset As DataSet
 
-      If pObjectByPage.Object IsNot Nothing Then
-        mDataset = PopulateDataSet(pType, pObjectByPage.Object)
-      Else
-        mDataset = pObjectByPage.DataSet
-      End If
+			If pObjectByPage.Object IsNot Nothing Then
+				mDataset = PopulateDataSet(pType, pObjectByPage.Object)
+			Else
+				mDataset = pObjectByPage.DataSet
+			End If
 
-      Dim mDataTable As New DataTable
-      mDataTable.Columns.Add("PageCount", GetType(System.Int32))
-      mDataTable.Columns.Add("RowCount", GetType(System.Int32))
-      Dim mDataRow As DataRow = mDataTable.NewRow
-      mDataRow(0) = pObjectByPage.PageCount
-      mDataRow(1) = pObjectByPage.RowCount
-      mDataTable.Rows.Add(mDataRow)
-      mDataset.Tables.Add(mDataTable)
+			Dim mDataTable As New DataTable
+			mDataTable.Columns.Add("PageCount", GetType(System.Int32))
+			mDataTable.Columns.Add("RowCount", GetType(System.Int32))
+			Dim mDataRow As DataRow = mDataTable.NewRow
+			mDataRow(0) = pObjectByPage.PageCount
+			mDataRow(1) = pObjectByPage.RowCount
+			mDataTable.Rows.Add(mDataRow)
+			mDataset.Tables.Add(mDataTable)
 
-      Return mDataset
-    End Function
+			Return mDataset
+		End Function
 
 		Public Shared Function PopulateDataSet(ByVal pType As System.Type, ByVal pSortedHashTable As SortedHashTable) As DataSet
 			Dim mArray As Object() = CType(Array.CreateInstance(pType, pSortedHashTable.Count), Object())
@@ -90,7 +92,7 @@ Namespace Misc
 				For Each mObject As Object In pArray
 					Dim mDataRow As DataRow = mDataSet.Tables(0).NewRow
 					For i As Integer = 0 To mPropiedades.Length - 1
-						If mPropiedades(i).PropertyType IsNot GetType(IO.Stream) And Not mPropiedades(i).PropertyType.IsSubclassOf(GetType(IO.Stream)) Then
+						If mPropiedades(i).PropertyType IsNot GetType(IO.Stream) AndAlso Not mPropiedades(i).PropertyType.IsSubclassOf(GetType(IO.Stream)) Then
 							If mObject.GetType.GetProperty(mPropiedades(i).Name) Is Nothing Then
 								Throw (New Exception("The property " & mPropiedades(i).Name & " does not exists in " & mObject.GetType.FullName))
 							End If
@@ -129,7 +131,7 @@ Namespace Misc
 					 AndAlso mPropertySrc.Name.ToLower <> "itemstate" Then
 						Try
 
-							If mPropertySrc.PropertyType IsNot GetType(IO.Stream) And Not mPropertySrc.PropertyType.IsSubclassOf(GetType(IO.Stream)) Then
+							If mPropertySrc.PropertyType IsNot GetType(IO.Stream) AndAlso Not mPropertySrc.PropertyType.IsSubclassOf(GetType(IO.Stream)) Then
 
 								Dim mValue As Object = mPropertySrc.GetValue(pObjectSrc, Nothing)
 								Dim mProperty As PropertyInfo = mTypeDest.GetProperty(mPropertySrc.Name)
@@ -273,6 +275,81 @@ Namespace Misc
 				End If
 			End If
 		End Sub
+#End Region
+
+#Region "FIRST LETTER UPPER"
+
+		Public Shared Function FirstLetterUp(ByVal pStr As String) As String
+			If pStr = "" Then
+				Return Nothing
+			Else
+				Return Char.ToUpper(pStr(0)) & pStr.Substring(1)
+			End If
+		End Function
+#End Region
+
+#Region "URL ENCODE UPPER"
+		Public Shared Function UrlEncodeUpper(ByVal pUrl As String) As String
+			'Dim mLower As String = HttpUtility.UrlEncode(pUrl)
+
+			Dim mTemp As Char() = HttpUtility.UrlEncode(pUrl).ToCharArray()
+			For mI As Int32 = 0 To mTemp.Length - 3
+				If (mTemp(mI) = "%") Then
+					mTemp(mI + 1) = Char.ToUpper(mTemp(mI + 1))
+					mTemp(mI + 2) = Char.ToUpper(mTemp(mI + 2))
+				End If
+			Next
+			Return New String(mTemp)
+		End Function
+#End Region
+
+#Region "DATASET TO JSON"
+
+		Public Shared Function DatasetToJson(ByVal pDS As DataSet) As String
+			Return Newtonsoft.Json.JsonConvert.SerializeObject(pDS)
+		End Function
+#End Region
+
+#Region "DATATABLE TO JSON"
+
+		Public Shared Function DataTableToJson(ByVal pDT As DataTable) As String
+			Return Newtonsoft.Json.JsonConvert.SerializeObject(pDT)
+		End Function
+#End Region
+
+#Region "OBJECT TO JSON"
+
+		Public Shared Function ObjectToJson(ByVal pObject As Object) As String
+			Return ObjectToJson(pObject, New String() {})
+		End Function
+
+		Public Shared Function ObjectToJson(ByVal pObject As Object, ByVal pNullProps As String()) As String
+			If pObject IsNot Nothing Then
+				Return Newtonsoft.Json.JsonConvert.SerializeObject(pObject, Newtonsoft.Json.Formatting.None, New KeysJsonConverter({pObject.GetType}, pNullProps))
+			Else
+				'Return Nothing
+				Return "null"
+			End If
+		End Function
+#End Region
+
+#Region "JSON TO OBJECT"
+
+		'Public Shared Function JsonToObject(ByVal pJson As String, ByVal pType As System.Type) As Object
+		'	If pJson <> "" And pType IsNot Nothing Then
+		'		'Return Newtonsoft.Json.JsonConvert.DeserializeObject(Of pType)(pJson)
+		'	Else
+		'		Return Nothing
+		'	End If
+		'End Function
+#End Region
+
+#Region "CAPITALIZE TEXT"
+		Public Shared Function CapitalizeText(ByVal pCadena As String) As String
+			pCadena = pCadena.ToLower
+			Dim mCultureInfo As New System.Globalization.CultureInfo("es-AR", False)
+			Return mCultureInfo.TextInfo.ToTitleCase(pCadena)
+		End Function
 #End Region
 
 	End Class

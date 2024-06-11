@@ -11,7 +11,7 @@ Public Class SQLHelper
 #Region "FIELDS"
 
 	Private mMutex As New System.Threading.Mutex
-	Private mIDBConnection As IDbConnection = Nothing
+	Private mIdbConnection As IDbConnection = Nothing
 	Private mTransaction As Hashtable = Hashtable.Synchronized(New Hashtable)
 	Private mTransactionCounter As Hashtable = Hashtable.Synchronized(New Hashtable)
 	Private mTransactionExists As Hashtable = Hashtable.Synchronized(New Hashtable)
@@ -20,18 +20,17 @@ Public Class SQLHelper
 #End Region
 
 #Region "EXECUTE NON QUERY"
-	Public Function ExecuteNonQuery(ByVal pCommandType As CommandType, _
-	 ByVal pCommandText As String, _
+	Public Function ExecuteNonQuery(ByVal pCommandType As CommandType,
+	 ByVal pCommandText As String,
 	 ByVal pParameterCollection As ParameterCollection) As Integer Implements ISQLHelper.ExecuteNonQuery
 
 		Dim mSQLConnection As SqlConnection = CType(GetIDBConnection(), SqlConnection)
 		Dim mSQLTransaction As SqlTransaction = CType(GetIDBTransaction(), SqlTransaction)
 		Dim mCmd As SqlCommand = Nothing
 		Dim mCerrarConeccion As Boolean = False
+		Dim mRetval As Integer = 0
 
 		Try
-
-			Dim mRetval As Integer
 
 			'Preparo el command que voy a ejecutar
 			mCmd = GetSQLCommand(mSQLConnection, mSQLTransaction, pCommandType, pCommandText, pParameterCollection)
@@ -52,7 +51,6 @@ Public Class SQLHelper
 			'Elimino los parametros del command
 			mCmd.Parameters.Clear()
 
-			Return mRetval
 
 		Catch ex As Exception
 			ProcessException(mSQLConnection, mSQLTransaction, mCmd, ex)
@@ -66,6 +64,8 @@ Public Class SQLHelper
 				CloseConnection(mSQLConnection)
 			End If
 		End Try
+
+		Return mRetval
 	End Function
 #End Region
 
@@ -79,7 +79,7 @@ Public Class SQLHelper
 		Dim mSQLTransaction As SqlTransaction = CType(GetIDBTransaction(), SqlTransaction)
 		Dim mSQLCommand As SqlCommand = Nothing
 		Dim mSQLDataAdapter As SqlDataAdapter = Nothing
-		Dim mCerrarConeccion As Boolean = False
+		'Dim mCerrarConeccion As Boolean = False
 
 		Try
 
@@ -91,13 +91,17 @@ Public Class SQLHelper
 			'Creo el DataAdpter
 			mSQLDataAdapter = New SqlDataAdapter(mSQLCommand)
 
-			'Verifico el estado de la coneccion
-			If mSQLConnection.State <> ConnectionState.Open Then
-				mSQLConnection.Open()
-				mCerrarConeccion = True
-			Else
-				mCerrarConeccion = False
-			End If
+			'2015.02.01
+			'https://msdn.microsoft.com/en-us/library/zxkb3c3d(v=vs.100).aspx
+			'If the IDbConnection is closed before Fill is called, it is opened to retrieve data and then closed. If the connection is open before Fill is called, it remains open.
+
+			''Verifico el estado de la coneccion
+			'If mSQLConnection.State <> ConnectionState.Open Then
+			'	mSQLConnection.Open()
+			'	mCerrarConeccion = True
+			'Else
+			'	mCerrarConeccion = False
+			'End If
 
 			'logger.Debug("Executing " & mCmd.CommandText & "...")
 
@@ -117,10 +121,10 @@ Public Class SQLHelper
 				mSQLCommand.Dispose()
 			End If
 
-			'Si tenia que cerrar la coneccion, la cierro
-			If (mCerrarConeccion) Then
-				CloseConnection(mSQLConnection)
-			End If
+			''Si tenia que cerrar la coneccion, la cierro
+			'If (mCerrarConeccion) Then
+			'	CloseConnection(mSQLConnection)
+			'End If
 		End Try
 	End Function
 
@@ -130,16 +134,15 @@ Public Class SQLHelper
 
 	Public Function ExecuteScalar(ByVal pCommandType As CommandType, _
 	 ByVal pCommandText As String, _
-	 ByVal pParameterCollection As ParameterCollection) As String Implements ISQLHelper.ExecuteScalar
+	 ByVal pParameterCollection As ParameterCollection) As Object Implements ISQLHelper.ExecuteScalar
 
 		Dim mSQLConnection As SqlConnection = CType(GetIDBConnection(), SqlConnection)
 		Dim mSQLTransaction As SqlTransaction = CType(GetIDBTransaction(), SqlTransaction)
 		Dim mCmd As SqlCommand = Nothing
 		Dim mCerrarConeccion As Boolean = False
+		Dim mRetval As Object = Nothing
 
 		Try
-
-			Dim mRetval As String
 
 			'Preparo el command que voy a ejecutar
 			mCmd = GetSQLCommand(mSQLConnection, mSQLTransaction, pCommandType, pCommandText, pParameterCollection)
@@ -155,12 +158,11 @@ Public Class SQLHelper
 			'logger.Debug("Executing " & mCmd.CommandText & "...")
 
 			'Ejecuto el command
-			mRetval = ConvertHelper.ToString(mCmd.ExecuteScalar())
+			mRetval = mCmd.ExecuteScalar()
 
 			'Elimino los parametros del command
 			mCmd.Parameters.Clear()
 
-			Return mRetval
 		Catch ex As Exception
 			ProcessException(mSQLConnection, mSQLTransaction, mCmd, ex)
 		Finally
@@ -173,188 +175,17 @@ Public Class SQLHelper
 				CloseConnection(mSQLConnection)
 			End If
 		End Try
+
+		Return mRetval
 	End Function
-#End Region
-
-#Region "EXECUTE READER"
-
-	'Public Function ExecuteReader(ByVal pConnectionString As String, _
-	'ByVal pCommandType As CommandType, _
-	'ByVal pCommandText As String) As SqlDataReader
-	'	Dim mConnection As New SqlConnection(pConnectionString)
-
-	'	Return ExecuteReader(mConnection, CType(Nothing, SqlTransaction), pCommandType, pCommandText, CType(Nothing, SqlParameter()))
-	'End Function
-
-	'Public Function ExecuteReader(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pProcedimiento As String) As SqlDataReader
-
-	'	Return ExecuteReader(pConnection, pTransaction, CommandType.StoredProcedure, pProcedimiento, CType(Nothing, SqlParameter()))
-	'End Function
-
-	'Public Function ExecuteReader(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pProcedimiento As String, _
-	'ByVal pSQLParameterCollection As SqlParameterCollection) As SqlDataReader
-
-	'	Return ExecuteReader(pConnection, pTransaction, CommandType.StoredProcedure, pProcedimiento, SqlParameterColleccionToSqlParameters(pSQLParameterCollection))
-	'End Function
-
-	'Public Function ExecuteReader(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pProcedimiento As String, _
-	'ByVal ParamArray pSQLParameters() As SqlParameter) As SqlDataReader
-
-	'	Return ExecuteReader(pConnection, pTransaction, CommandType.StoredProcedure, pProcedimiento, pSQLParameters)
-	'End Function
-
-	'Public Function ExecuteReader(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pCommandType As CommandType, _
-	'ByVal pCommandText As String, _
-	'ByVal ParamArray pSQLParameters() As SqlParameter) As SqlDataReader
-
-	'	If (pConnection Is Nothing) Then Throw New ArgumentNullException("pConnection")
-	'	Dim mCmd As SqlCommand = Nothing
-	'	Dim mCerrarConeccion As Boolean = False
-
-	'	Try
-
-	'		'Preparo el command que voy a ejecutar
-	'		mCmd = GetSQLCommand(pConnection, pTransaction, pCommandType, pCommandText, pSQLParameters)
-
-	'		'Verifico el estado de la coneccion
-	'		If pConnection.State <> ConnectionState.Open Then
-	'			pConnection.Open()
-	'			mCerrarConeccion = True
-	'		Else
-	'			mCerrarConeccion = False
-	'		End If
-
-	'		'Ejecuto el command
-	'		'mRetval = mCmd.ExecuteNonQuery()
-
-	'		'Elimino los parametros del command
-	'		mCmd.Parameters.Clear()
-
-	'		Return Nothing
-	'	Catch ex As Exception
-	'		ProcessException(pConnection, pTransaction, mCmd, ex)
-	'		Return Nothing
-	'	Finally
-	'		If mCmd IsNot Nothing Then
-	'			mCmd.Dispose()
-	'		End If
-
-	'		'Si tenia que cerrar la coneccion, la cierro
-	'		If (mCerrarConeccion) Then
-	'			CloseConnection(pConnection)
-	'		End If
-	'	End Try
-	'End Function
-#End Region
-
-#Region "EXECUTE XML"
-
-	'Public Function ExecuteXML(ByVal pConnectionString As String, _
-	'ByVal pCommandType As CommandType, _
-	'ByVal pCommandText As String) As String
-	'	Dim mConnection As New SqlConnection(pConnectionString)
-
-	'	Return ExecuteXML(mConnection, CType(Nothing, SqlTransaction), pCommandType, pCommandText, CType(Nothing, SqlParameter()))
-	'End Function
-
-	'Public Function ExecuteXML(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pProcedimiento As String) As String
-
-	'	Return ExecuteXML(pConnection, pTransaction, CommandType.StoredProcedure, pProcedimiento, CType(Nothing, SqlParameter()))
-	'End Function
-
-	'Public Function ExecuteXML(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pProcedimiento As String, _
-	'ByVal pSQLParameterCollection As SqlParameterCollection) As String
-
-	'	Return ExecuteXML(pConnection, pTransaction, CommandType.StoredProcedure, pProcedimiento, SqlParameterColleccionToSqlParameters(pSQLParameterCollection))
-	'End Function
-
-	'Public Function ExecuteXML(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pProcedimiento As String, _
-	'ByVal ParamArray pSQLParameters() As SqlParameter) As String
-
-	'	Return ExecuteXML(pConnection, pTransaction, CommandType.StoredProcedure, pProcedimiento, pSQLParameters)
-	'End Function
-
-	'Public Function ExecuteXML(ByVal pConnection As SqlConnection, _
-	'ByVal pTransaction As SqlTransaction, _
-	'ByVal pCommandType As CommandType, _
-	'ByVal pCommandText As String, _
-	'ByVal ParamArray pSQLParameters() As SqlParameter) As String
-
-	'	If (pConnection Is Nothing) Then Throw New ArgumentNullException("pConnection")
-	'	Dim mCmd As SqlCommand = Nothing
-	'	Dim mCerrarConeccion As Boolean = False
-
-	'	Try
-
-	'		Dim mXmlReader As XmlReader
-
-	'		'Preparo el command que voy a ejecutar
-	'		mCmd = GetSQLCommand(pConnection, pTransaction, pCommandType, pCommandText, pSQLParameters)
-
-	'		'Verifico el estado de la coneccion
-	'		If pConnection.State <> ConnectionState.Open Then
-	'			pConnection.Open()
-	'			mCerrarConeccion = True
-	'		Else
-	'			mCerrarConeccion = False
-	'		End If
-
-	'		'logger.Debug("Executing " & mCmd.CommandText & "...")
-
-	'		'Traigo el XML
-	'		mXmlReader = mCmd.ExecuteXmlReader()
-
-	'		Dim mRetorno As New Text.StringBuilder
-	'		While (Not mXmlReader.EOF)
-	'			If mXmlReader.IsStartElement() Then
-	'				mRetorno.Append(mXmlReader.ReadOuterXml() + Environment.NewLine)
-	'			End If
-	'		End While
-
-	'		mXmlReader.Close()
-
-	'		'Elimino los parametros del command
-	'		mCmd.Parameters.Clear()
-
-	'		Return mRetorno.ToString
-
-	'	Catch ex As Exception
-	'		ProcessException(pConnection, pTransaction, mCmd, ex)
-	'		Return Nothing
-	'	Finally
-	'		If mCmd IsNot Nothing Then
-	'			mCmd.Dispose()
-	'		End If
-
-	'		'Si tenia que cerrar la coneccion, la cierro
-	'		If (mCerrarConeccion) Then
-	'			CloseConnection(pConnection)
-	'		End If
-	'	End Try
-	'End Function
-
 #End Region
 
 #Region "CLOSE CONNECTION"
 
-	Private Sub CloseConnection(ByVal pSQLConnection As SqlConnection)
-		If pSQLConnection IsNot Nothing Then
+	Private Sub CloseConnection(ByVal pSqlConnection As SqlConnection)
+		If pSqlConnection IsNot Nothing Then
 
-			pSQLConnection.Close()
+			pSqlConnection.Close()
 			'14.12.2009: Ahora el ORMModule se suscribe al evento End_Request y ejecuta un dispose de la conección.
 			'logger.Debug("CloseConnection()")
 		End If
@@ -363,12 +194,12 @@ Public Class SQLHelper
 
 #Region "PROCESS EXCEPTION"
 
-	Private Sub ProcessException(ByVal pSQLConnection As SqlConnection, ByVal pSQLTransaction As SqlTransaction, ByVal pSQLCommand As SqlCommand, ByVal pEx As Exception)
-		Dim mError As String = System.Environment.NewLine & "SQLConnection is nothing: " & (pSQLConnection Is Nothing).ToString & System.Environment.NewLine & _
-		"SQLTransaction is nothing: " & (pSQLTransaction Is Nothing).ToString & System.Environment.NewLine
+	Private Sub ProcessException(ByVal pSqlConnection As SqlConnection, ByVal pSqlTransaction As SqlTransaction, ByVal pSqlCommand As SqlCommand, ByVal pEx As Exception)
+		Dim mError As String = System.Environment.NewLine & "SQLConnection is nothing: " & (pSqlConnection Is Nothing).ToString & System.Environment.NewLine &
+		"SQLTransaction is nothing: " & (pSqlTransaction Is Nothing).ToString & System.Environment.NewLine
 
-		If pSQLCommand IsNot Nothing AndAlso pSQLCommand.CommandText <> "" Then
-			mError += "SQLCommand: " & pSQLCommand.CommandText & System.Environment.NewLine
+		If pSqlCommand IsNot Nothing AndAlso pSqlCommand.CommandText <> "" Then
+			mError += "SQLCommand: " & pSqlCommand.CommandText & System.Environment.NewLine
 		End If
 
 		mError += System.Environment.NewLine & pEx.Message
@@ -383,7 +214,7 @@ Public Class SQLHelper
 
 #Region "GET I DB CONNECTION"
 
-	Public Function GetIDBConnection() As IDbConnection
+	Public Function GetIdbConnection() As IDbConnection
 
 		Try
 			mMutex.WaitOne()
@@ -401,23 +232,22 @@ Public Class SQLHelper
 #End Region
 
 #Region "CLEAR I DB CONNECTION"
-	Public Overridable Sub ClearIDBConnection() Implements ISQLHelper.ClearIDBConnection
-		mIDBConnection = Nothing
+	Public Overridable Sub ClearIdbConnection() Implements ISQLHelper.ClearIdbConnection
+		mIdbConnection = Nothing
 	End Sub
 #End Region
 
 #Region "CLOSE I DB CONNECTION "
-	Public Overridable Sub CloseIDBConnection() Implements ISQLHelper.CloseIDBConnection
+	Public Overridable Sub CloseIdbConnection() Implements ISQLHelper.CloseIdbConnection
 		Try
 			mMutex.WaitOne()
 
-			If Not Me.TransactionExists Then
-				If mIDBConnection IsNot Nothing Then
-					If mIDBConnection.State = ConnectionState.Open Then
-						mIDBConnection.Close()
-					End If
-					mIDBConnection = Nothing
+			If Not Me.TransactionExists AndAlso
+				mIDBConnection IsNot Nothing Then
+				If mIDBConnection.State = ConnectionState.Open Then
+					mIDBConnection.Close()
 				End If
+				mIDBConnection = Nothing
 			End If
 		Finally
 			mMutex.ReleaseMutex()
@@ -426,18 +256,18 @@ Public Class SQLHelper
 #End Region
 
 #Region "DISPOSE I DB CONNECTION "
-	Public Sub DisposeIDBConnection() Implements ISQLHelper.DisposeIDBConnection
-		Me.GetIDBConnection().Dispose()
+	Public Sub DisposeIdbConnection() Implements ISQLHelper.DisposeIdbConnection
+		Me.GetIdbConnection().Dispose()
 	End Sub
 #End Region
 
 #Region "GET I DB CONNECTION KEY"
-	Public Function GetIDBConnectionKey() As String Implements ISQLHelper.GetIDBConnectionKey
-		Return GetIDBConnectionKey(GetIDBConnection)
+	Public Function GetIdbConnectionKey() As String Implements ISQLHelper.GetIdbConnectionKey
+		Return GetIDBConnectionKey(GetIdbConnection)
 	End Function
 
-	Public Function GetIDBConnectionKey(ByRef pIDBConnection As IDbConnection) As String
-		Dim mSQLCOnnection As SqlConnection = CType(pIDBConnection, SqlConnection)
+	Public Function GetIdbConnectionKey(ByRef pIdbConnection As IDbConnection) As String
+		Dim mSQLCOnnection As SqlConnection = CType(pIdbConnection, SqlConnection)
 
 		'Return mSQLCOnnection.GetHashCode.ToString
 		Return mSQLCOnnection.Database
@@ -547,17 +377,17 @@ Public Class SQLHelper
 #End Region
 
 #Region "GET I DB TRANSACTION"
-	Public Function GetIDBTransaction() As IDbTransaction
+	Public Function GetIdbTransaction() As IDbTransaction
 		Return CType(GetTransaction(GetIDBConnection), IDbTransaction)
 	End Function
 #End Region
 
 #Region "SET/GET TRANSACTION COUNTER"
 
-	Private Sub SetTransactionCounter(ByRef pIDBConnection As IDbConnection, ByVal pValue As Byte)
+	Private Sub SetTransactionCounter(ByRef pIdbConnection As IDbConnection, ByVal pValue As Byte)
 		Try
 			mMutex.WaitOne()
-			Dim mKey As String = GetIDBConnectionKey(pIDBConnection)
+			Dim mKey As String = GetIdbConnectionKey(pIdbConnection)
 			If Not mTransactionCounter.ContainsKey(mKey) Then
 				mTransactionCounter.Add(mKey, 0)
 			End If
@@ -567,10 +397,10 @@ Public Class SQLHelper
 		End Try
 	End Sub
 
-	Private Function GetTransactionCounter(ByRef pIDBConnection As IDbConnection) As Byte
+	Private Function GetTransactionCounter(ByRef pIdbConnection As IDbConnection) As Byte
 		Try
 			mMutex.WaitOne()
-			Dim mKey As String = GetIDBConnectionKey(pIDBConnection)
+			Dim mKey As String = GetIdbConnectionKey(pIdbConnection)
 			If Not mTransactionCounter.ContainsKey(mKey) Then
 				mTransactionCounter.Add(mKey, 0)
 			End If
@@ -582,23 +412,23 @@ Public Class SQLHelper
 #End Region
 
 #Region "SET/GET TRANSACTION"
-	Private Sub SetTransaction(ByRef pIDBConnection As IDbConnection, ByRef pSQLTransaction As SqlTransaction)
+	Private Sub SetTransaction(ByRef pIdbConnection As IDbConnection, ByRef pSqlTransaction As SqlTransaction)
 		Try
 			mMutex.WaitOne()
-			Dim mKey As String = GetIDBConnectionKey(pIDBConnection)
+			Dim mKey As String = GetIdbConnectionKey(pIdbConnection)
 			If Not mTransaction.ContainsKey(mKey) Then
 				mTransaction.Add(mKey, Nothing)
 			End If
-			mTransaction(mKey) = pSQLTransaction
+			mTransaction(mKey) = pSqlTransaction
 		Finally
 			mMutex.ReleaseMutex()
 		End Try
 	End Sub
 
-	Private Function GetTransaction(ByRef pIDBConnection As IDbConnection) As SqlTransaction
+	Private Function GetTransaction(ByRef pIdbConnection As IDbConnection) As SqlTransaction
 		Try
 			mMutex.WaitOne()
-			Dim mKey As String = GetIDBConnectionKey(pIDBConnection)
+			Dim mKey As String = GetIdbConnectionKey(pIdbConnection)
 			If Not mTransaction.ContainsKey(mKey) Then
 				mTransaction.Add(mKey, Nothing)
 			End If
@@ -611,10 +441,10 @@ Public Class SQLHelper
 
 #Region "SET/GET TRANSACTION EXISTS"
 
-	Private Sub SetTransactionExists(ByRef pIDBConnection As IDbConnection, ByRef pTransactionExists As Boolean)
+	Private Sub SetTransactionExists(ByRef pIdbConnection As IDbConnection, ByRef pTransactionExists As Boolean)
 		Try
 			mMutex.WaitOne()
-			Dim mKey As String = GetIDBConnectionKey(pIDBConnection)
+			Dim mKey As String = GetIdbConnectionKey(pIdbConnection)
 			If Not mTransactionExists.ContainsKey(mKey) Then
 				mTransactionExists.Add(mKey, False)
 			End If
@@ -624,10 +454,10 @@ Public Class SQLHelper
 		End Try
 	End Sub
 
-	Private Function GetTransactionExists(ByRef pIDBConnection As IDbConnection) As Boolean
+	Private Function GetTransactionExists(ByRef pIdbConnection As IDbConnection) As Boolean
 		Try
 			mMutex.WaitOne()
-			Dim mKey As String = GetIDBConnectionKey(pIDBConnection)
+			Dim mKey As String = GetIdbConnectionKey(pIdbConnection)
 			If Not mTransactionExists.ContainsKey(mKey) Then
 				mTransactionExists.Add(mKey, False)
 			End If
@@ -642,10 +472,10 @@ Public Class SQLHelper
 
 #Region "GET SQL COMMAND"
 
-	Private Function GetSQLCommand(ByVal pConnection As SqlConnection, _
-	ByVal pTransaction As SqlTransaction, _
-	ByVal pCommandType As CommandType, _
-	ByVal pCommandText As String, _
+	Private Function GetSqlCommand(ByVal pConnection As SqlConnection,
+	ByVal pTransaction As SqlTransaction,
+	ByVal pCommandType As CommandType,
+	ByVal pCommandText As String,
 	ByVal pParameterCollection As ParameterCollection) As SqlCommand
 
 
@@ -675,6 +505,10 @@ Public Class SQLHelper
 				Dim mSQLParameter As New SqlParameter
 				mSQLParameter.ParameterName = "@" & mKeyValue.Key
 				mSQLParameter.SqlDbType = CType(pParameterCollection.GetTypes(mKeyValue.Key), SqlDbType)
+				Dim mTypeName As String = pParameterCollection.GetTypesName(mKeyValue.Key)
+				If mTypeName <> "" AndAlso mTypeName IsNot Nothing Then
+					mSQLParameter.TypeName = mTypeName
+				End If
 
 				If mKeyValue.Value IsNot Nothing AndAlso TryCast(mKeyValue.Value, Nullables.INullableType) IsNot Nothing Then
 					If CType(mKeyValue.Value, Nullables.INullableType).HasValue Then
@@ -698,21 +532,21 @@ Public Class SQLHelper
 
 #Region "GET SQL PARAMETER COLLECTION"
 
-	Public Function GetSQLParameterCollection(ByVal pProcedureName As String) As SqlParameterCollection
-		Return GetSQLParameterCollection(pProcedureName, False)
+	Public Function GetSqlParameterCollection(ByVal pProcedureName As String) As SqlParameterCollection
+		Return GetSqlParameterCollection(pProcedureName, False)
 	End Function
 
-	Public Function GetSQLParameterCollection(ByVal pProcedureName As String, ByVal pWithReturnParameter As Boolean) As SqlParameterCollection
+	Public Function GetSqlParameterCollection(ByVal pProcedureName As String, ByVal pWithReturnParameter As Boolean) As SqlParameterCollection
 
 		If (pProcedureName Is Nothing OrElse pProcedureName.Length = 0) Then Throw New ArgumentNullException("pProcedureName")
 
-		Dim mParametros() As SqlParameter, mSqlCommand As New SqlCommand
-		mParametros = GetSQLParameters(pProcedureName, pWithReturnParameter)
+		Dim mParametros As SqlParameter(), mSqlCommand As New SqlCommand
+		mParametros = GetSqlParameters(pProcedureName, pWithReturnParameter)
 
 		If mParametros IsNot Nothing Then
 			'Agrego los parametros al command
 			For Each mSQLParameter As SqlParameter In mParametros
-				If (Not mSQLParameter Is Nothing) Then
+				If (mSQLParameter IsNot Nothing) Then
 					mSqlCommand.Parameters.Add(CType(CType(mSQLParameter, ICloneable).Clone, SqlParameter))
 				End If
 			Next
@@ -723,20 +557,20 @@ Public Class SQLHelper
 #End Region
 
 #Region "GET SQL PARAMETERS"
-	Public Function GetSQLParameters(ByVal pProcedureName As String) As SqlParameter() Implements ISQLHelper.GetSQLParameters
-		Return GetSQLParameters(pProcedureName, False)
+	Public Function GetSqlParameters(ByVal pProcedureName As String) As SqlParameter() Implements ISQLHelper.GetSqlParameters
+		Return GetSqlParameters(pProcedureName, False)
 	End Function
 
-	Public Function GetSQLParameters(ByVal pProcedureName As String, _
+	Public Function GetSqlParameters(ByVal pProcedureName As String,
 	 ByVal pWithReturnParameter As Boolean) As SqlParameter()
 
 		If (pProcedureName Is Nothing OrElse pProcedureName.Length = 0) Then Throw New ArgumentNullException("pProcedureName")
-		Dim mSqlParameters() As SqlParameter
+		Dim mSqlParameters As SqlParameter()
 		Dim mSQLConnection As SqlConnection = CType(CType(GetIDBConnection(), ICloneable).Clone, SqlConnection)
 
 
 		'Verifico si los SQLParameters estan en cache
-		mSqlParameters = CacheGetSQLParameters(mSQLConnection, pProcedureName)
+		mSqlParameters = CacheGetSqlParameters(mSQLConnection, pProcedureName)
 		If mSqlParameters Is Nothing Then
 
 			'Si no estan en cache, los creo
@@ -764,10 +598,10 @@ Public Class SQLHelper
 			Next
 
 			'Clono los SQLParameters
-			mSqlParameters = CloneSQLParameters(mSqlParameters)
+			mSqlParameters = CloneSqlParameters(mSqlParameters)
 
 			'Guardo el array de SQLParameters en el cache para futuros pedidos
-			CacheSetSQLParameters(mSQLConnection, pProcedureName, mSqlParameters)
+			CacheSetSqlParameters(mSQLConnection, pProcedureName, mSqlParameters)
 		End If
 
 		Return mSqlParameters
@@ -777,22 +611,22 @@ Public Class SQLHelper
 
 #Region "CACHE SET SQL PARAMETERS"
 
-	Private Sub CacheSetSQLParameters(ByRef pSQLConnection As SqlConnection, _
-	 ByVal pProcedureName As String, _
-	 ByVal ParamArray pSQLParameters() As SqlParameter)
+	Private Sub CacheSetSqlParameters(ByRef pSqlConnection As SqlConnection,
+	 ByVal pProcedureName As String,
+	 ByVal ParamArray pSqlParameters() As SqlParameter)
 
-		Dim mParametersKey As String = pSQLConnection.DataSource & ";" & pSQLConnection.Database & ":" & pProcedureName
+		Dim mParametersKey As String = pSqlConnection.DataSource & ";" & pSqlConnection.Database & ":" & pProcedureName
 
-		WorkSpaces.WorkSpace.GlobalItem(mParametersKey, 240) = pSQLParameters
+		WorkSpaces.WorkSpace.GlobalItem(mParametersKey, 240) = pSqlParameters
 	End Sub
 #End Region
 
 #Region "CACHE GET SQL PARAMETERS"
-	Private Function CacheGetSQLParameters(ByRef pSQLConnection As SqlConnection, ByVal pProcedureName As String) As SqlParameter()
-		Dim mParametersKey As String = pSQLConnection.DataSource & ";" & pSQLConnection.Database & ":" & pProcedureName
+	Private Function CacheGetSqlParameters(ByRef pSqlConnection As SqlConnection, ByVal pProcedureName As String) As SqlParameter()
+		Dim mParametersKey As String = pSqlConnection.DataSource & ";" & pSqlConnection.Database & ":" & pProcedureName
 		If WorkSpaces.WorkSpace.GlobalContainsKey(mParametersKey) Then
 			Dim mSQLParameters As SqlParameter() = CType(WorkSpaces.WorkSpace.GlobalItem(mParametersKey), SqlParameter())
-			Return CloneSQLParameters(mSQLParameters)
+			Return CloneSqlParameters(mSQLParameters)
 		Else
 			Return Nothing
 		End If
@@ -800,13 +634,13 @@ Public Class SQLHelper
 #End Region
 
 #Region "CLONE SQL PARAMETERS"
-	Public Function CloneSQLParameters(ByVal pSQLParameters() As SqlParameter) As SqlParameter()
+	Public Function CloneSqlParameters(ByVal pSqlParameters() As SqlParameter) As SqlParameter()
 
-		Dim SQLParCount As Integer = pSQLParameters.Length - 1
+		Dim SQLParCount As Integer = pSqlParameters.Length - 1
 		Dim mSQLParameter(SQLParCount) As SqlParameter
 
 		For i As Integer = 0 To SQLParCount
-			mSQLParameter(i) = CType(CType(pSQLParameters(i), ICloneable).Clone, SqlParameter)
+			mSQLParameter(i) = CType(CType(pSqlParameters(i), ICloneable).Clone, SqlParameter)
 		Next
 
 		Return mSQLParameter

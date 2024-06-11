@@ -39,9 +39,9 @@ Namespace WorkSpaces
 			'Establezco el intervalo de ejecución (5000 = 5'')
 			'Intervalo de 10 minutos por defecto
 			Dim mInterval As Int32 = 600000
-      If ORMManager.Configuration.CachingCollectorScheduleSeconds > 0 Then
-        mInterval = ORMManager.Configuration.CachingCollectorScheduleSeconds
-      End If
+			If ORMManager.Configuration.CachingCollectorScheduleSeconds > 0 Then
+				mInterval = ORMManager.Configuration.CachingCollectorScheduleSeconds
+			End If
 			mTimer.Interval = mInterval
 
 			mTimer.Enabled = True

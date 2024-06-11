@@ -36,7 +36,7 @@ Friend Class SQLSchemaProvider
 		Dim mFields As DataTable
 
 		mSQLConnection.Open()
-		mFields = mSQLConnection.GetSchema(SqlClientMetaDataCollectionNames.Columns, New String() {Nothing, Nothing, pTableName, Nothing})
+		mFields = mSQLConnection.GetSchema(SqlClientMetaDataCollectionNames.Columns, {Nothing, Nothing, pTableName, Nothing})
 		mSQLConnection.Close()
 		mSQLConnection.Dispose()
 

@@ -126,7 +126,7 @@ Public Class ProcedureDefinition
 
 		SyncLock mQueries
 			If Not mQueries.ContainsKey(mQueryKey) Then
-				Dim mQuery01 As String = Nothing, mQuery02 As New Text.StringBuilder, mQuery03 As String = Nothing
+				Dim mQuery01 As String = "", mQuery02 As New Text.StringBuilder, mQuery03 As String = Nothing
 				If mValue IsNot Nothing Then
 					mQuery01 = mValue.Substring(0, mValue.IndexOf(" WHERE "))
 					mQuery02 = mQuery02.Append(" WHERE")
@@ -135,7 +135,7 @@ Public Class ProcedureDefinition
 					End If
 					If pParameterCollection IsNot Nothing Then
 						For Each mKeyValue As Generic.KeyValuePair(Of String, Object) In pParameterCollection
-							If mKeyValue.Value IsNot Nothing And mParameters.ContainsKey(mKeyValue.Key) Then
+							If mKeyValue.Value IsNot Nothing AndAlso mParameters.ContainsKey(mKeyValue.Key) Then
 								mQuery02 = mQuery02.Append(" AND " & mKeyValue.Key & "=@" & mKeyValue.Key)
 							End If
 						Next

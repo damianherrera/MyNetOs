@@ -35,13 +35,13 @@ Namespace Triggers
 							Dim mNewFile As String = mFile
 							mNewFile = mNewFile.Replace("%@PAGE@%", mPageCount.ToString)
 
-							If Not IO.File.Exists(mNewFile) Or Not mIncrement Then
+							If Not IO.File.Exists(mNewFile) OrElse Not mIncrement Then
 								Dim mContent As String = NetHelper.ClearChars(NetHelper.GetHttpRequest(mNewUrl, "GET", System.Text.Encoding.UTF8, Nothing))
 								If mContent = pAction.PageStopString Then
-									If mLastFileSaved <> "" Or mPageCount = 0 Then
+									If mLastFileSaved <> "" OrElse mPageCount = 0 Then
 										mNewFile = mFile
 										mNewFile = mNewFile.Replace("%@PAGE@%", "0")
-										If IO.File.Exists(mLastFileSaved) And mLastFileSaved <> mNewFile Then
+										If IO.File.Exists(mLastFileSaved) AndAlso mLastFileSaved <> mNewFile Then
 											IO.File.Copy(mLastFileSaved, mNewFile, True)
 										Else
 											'Aseguro generar el page 0
@@ -65,7 +65,7 @@ Namespace Triggers
 
 									mIncrement = True
 									'Aseguro no saltearme items desde la última pagina generada
-									If mAutoGenerateLast And mPageCount > 1 Then
+									If mAutoGenerateLast AndAlso mPageCount > 1 Then
 										mPageCount -= 2
 										mAutoGeneratePage = mPageCount + 1
 										mNewFile = mFile

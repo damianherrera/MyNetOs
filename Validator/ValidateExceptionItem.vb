@@ -16,8 +16,8 @@ Namespace Validator
 			Get
 				Return mMessage
 			End Get
-			Set(ByVal Value As String)
-				mMessage = Value
+			Set(ByVal value As String)
+				mMessage = value
 			End Set
 		End Property
 
@@ -25,8 +25,8 @@ Namespace Validator
 			Get
 				Return mNumber
 			End Get
-			Set(ByVal Value As Integer)
-				mNumber = Value
+			Set(ByVal value As Integer)
+				mNumber = value
 			End Set
 		End Property
 
@@ -34,8 +34,8 @@ Namespace Validator
 			Get
 				Return mLastException
 			End Get
-			Set(ByVal Value As Object)
-				mLastException = Value
+			Set(ByVal value As Object)
+				mLastException = value
 			End Set
 		End Property
 #End Region

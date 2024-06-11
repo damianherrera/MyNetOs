@@ -11,9 +11,9 @@ Namespace Validator
 
 #Region "PROPERTIES"
 
-		Public ReadOnly Property Item(ByVal Index As Integer) As ValidateExceptionItem
+		Public ReadOnly Property Item(ByVal index As Integer) As ValidateExceptionItem
 			Get
-				Return CType(mValidateExceptionItems(Index), ValidateExceptionItem)
+				Return CType(mValidateExceptionItems(index), ValidateExceptionItem)
 			End Get
 		End Property
 #End Region
@@ -77,6 +77,20 @@ Namespace Validator
       Return mValidateExceptionItems.ToArray()
     End Function
 #End Region
+
+#Region "TO JSON"
+
+		Public Function ToJson() As String
+			Dim mJson As String = ""
+			For Each mItem As ValidateExceptionItem In mValidateExceptionItems
+				mJson = "{""msg"":" & Misc.Utilities.ObjectToJson(mItem.Message) & ",""n"":" & mItem.Number & "},"
+			Next
+			mJson = ("[" & mJson & "]").Replace("},]", "}]")
+			Return mJson
+		End Function
+#End Region
+
+
 
 #Region "CLEAR ALL"
 

@@ -21,7 +21,7 @@ Public Class ValueDefinition
 #Region "CONSTRUCTOR"
 
 	Public Sub New(ByVal pXmlNode As Xml.XmlNode)
-		If Not pXmlNode.Attributes("class") Is Nothing Then
+		If pXmlNode.Attributes("class") IsNot Nothing Then
 			mClass = pXmlNode.Attributes("class").Value
 		Else
 			mClass = Nothing

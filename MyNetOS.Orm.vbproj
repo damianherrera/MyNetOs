@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -13,7 +13,12 @@
     <AssemblyName>MyNetOS.Orm</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Windows</MyType>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,6 +31,7 @@
     <NoWarn>
     </NoWarn>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -38,6 +44,7 @@
     <NoWarn>
     </NoWarn>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <OptionExplicit>On</OptionExplicit>
@@ -56,6 +63,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Civinext\Libreria\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Civinext\Libreria\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="Nullables, Version=1.2.0.1001, Culture=neutral, PublicKeyToken=aa95f207798dfdb4">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Civinext\Libreria\Nullables.dll</HintPath>
@@ -69,6 +80,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
     <Import Include="MyNetOS.ORM" />
     <Import Include="System" />
     <Import Include="System.Collections" />
@@ -83,6 +95,8 @@
     <Compile Include="Mapping\Triggers\ActionDefinition.vb" />
     <Compile Include="Mapping\Triggers\TriggerDefinition.vb" />
     <Compile Include="Misc\Context.vb" />
+    <Compile Include="Misc\CryptoHelper.vb" />
+    <Compile Include="Misc\KeysJsonConverter.vb" />
     <Compile Include="Misc\ObjectHelper.vb" />
     <Compile Include="IDBProvider.vb" />
     <Compile Include="IInvocationHandler.vb" />
@@ -106,6 +120,7 @@
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
       <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -119,8 +134,9 @@
     </Compile>
     <Compile Include="ORMCache.vb" />
     <Compile Include="Providers\SQL\ISQLHelper.vb" />
+    <Compile Include="QueryBuilder.vb" />
     <Compile Include="Triggers\ITrigger.vb" />
-    <Compile Include="Triggers\NetHelper.vb" />
+    <Compile Include="Misc\NetHelper.vb" />
     <Compile Include="Types\ObjectByPage.vb" />
     <Compile Include="ORMHelper.vb" />
     <Compile Include="ORMManager.vb" />

@@ -58,7 +58,7 @@ Public Class KeyDefinition
 			Dim mProperty As New PropertyDefinition
 			mProperty.Name = pXmlNode.Attributes("property").Value
 
-			If Not pXmlNode.Attributes("parameter") Is Nothing Then
+			If pXmlNode.Attributes("parameter") IsNot Nothing Then
 				mProperty.Parameter = pXmlNode.Attributes("parameter").Value
 			Else
 				mProperty.Parameter = mProperty.Name
@@ -67,7 +67,7 @@ Public Class KeyDefinition
 			mCompositeId.Add(mProperty.Name, mProperty)
 		End If
 
-		If Not pXmlNode.Attributes("type") Is Nothing Then
+		If pXmlNode.Attributes("type") IsNot Nothing Then
 			mType = pXmlNode.Attributes("type").Value
 		Else
 			mType = Nothing

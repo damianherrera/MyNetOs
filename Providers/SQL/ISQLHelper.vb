@@ -2,7 +2,7 @@
 
 
 
-Public Interface ISQLHelper
+Public Interface ISqlHelper
 
 #Region "EXECUTE NON QUERY"
 	Function ExecuteNonQuery(ByVal pCommandType As CommandType, ByVal pCommandText As String, ByVal pParameterCollection As ParameterCollection) As Integer
@@ -13,18 +13,18 @@ Public Interface ISQLHelper
 #End Region
 
 #Region "EXECUTE SCALAR"
-	Function ExecuteScalar(ByVal pCommandType As CommandType, ByVal pCommandText As String, ByVal pParameterCollection As ParameterCollection) As String
+	Function ExecuteScalar(ByVal pCommandType As CommandType, ByVal pCommandText As String, ByVal pParameterCollection As ParameterCollection) As Object
 #End Region
 
 #Region "GET SQL PARAMETERS"
-	Function GetSQLParameters(ByVal pProcedureName As String) As SqlParameter()
+	Function GetSqlParameters(ByVal pProcedureName As String) As SqlParameter()
 #End Region
 
 #Region "CONNECTIONS"
-	Sub ClearIDBConnection()
-	Sub CloseIDBConnection()
-	Sub DisposeIDBConnection()
-	Function GetIDBConnectionKey() As String
+	Sub ClearIdbConnection()
+	Sub CloseIdbConnection()
+	Sub DisposeIdbConnection()
+	Function GetIdbConnectionKey() As String
 	Function GetSavePointName() As String
 #End Region
 

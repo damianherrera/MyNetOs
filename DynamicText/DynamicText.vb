@@ -54,7 +54,7 @@ Friend Class DynamicText
 									GetProcedureProvider.SetDeleteAllCommand(pClassDefinition, mDictionaryEntry.Value, mEntry.Value)
 							End Select
 						ElseIf mDictionaryEntry.Value.Type = DICTIONARY_TYPE.ONE_TO_MANY Then
-							'TODO: Falta hacer que el GetAll pida la PrimaryKey del objeto que tiene la asociación
+							'Falta hacer que el GetAll pida la PrimaryKey del objeto que tiene la asociación
 							Select Case mEntry.Value.Action
 								Case ACTION.GET_ALL
 									GetProcedureProvider.SetGetAllCommand(ORMManager.GetClassDefinition(mDictionaryEntry.Value.Value.Class), mEntry.Value)

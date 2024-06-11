@@ -1,10 +1,12 @@
 Imports System.Text
-Imports System.Xml
-Imports System.IO
 
 Namespace Misc
 
 	Public Class ConvertHelper
+
+#Region "FIELDS"
+		Private Shared ReadOnly __RegexTimeOutSpan As Int32 = 5
+#End Region
 
 #Region "ENUM NAME"
 
@@ -251,7 +253,7 @@ Namespace Misc
 		Public Shared Shadows Function ToString(ByVal pObject As Object) As String
 			If pObject Is System.DBNull.Value Then
 				Return ("")
-			ElseIf pObject IsNot Nothing AndAlso (pObject.GetType.Name = "Array" Or pObject.GetType.Name = "Byte[]") Then
+			ElseIf pObject IsNot Nothing AndAlso (pObject.GetType.Name = "Array" OrElse pObject.GetType.Name = "Byte[]") Then
 				Return System.ComponentModel.TypeDescriptor.GetConverter(pObject).ConvertToString(pObject)
 			ElseIf pObject IsNot Nothing AndAlso TryCast(pObject, Nullables.INullableType) IsNot Nothing Then
 				If CType(pObject, Nullables.INullableType).HasValue Then
@@ -268,6 +270,23 @@ Namespace Misc
 
 		Public Shared Function ByteArrayToString(ByVal pByteArray As Byte()) As String
 			Return Encoding.Unicode.GetString(pByteArray)
+		End Function
+#End Region
+
+#Region "TO STRING JSON"
+
+		Public Shared Function ToStringJson(ByVal pObject As Object) As String
+			Dim mRetorno As String = ""
+			If pObject Is System.DBNull.Value Then
+				mRetorno = "null"
+			ElseIf pObject Is Nothing OrElse CType(pObject, String) = "" Then
+				mRetorno = "null"
+			Else
+				mRetorno = CType(pObject, String)
+				mRetorno = """" & mRetorno.Replace("""", "\""").Replace(System.Environment.NewLine, "\n").Replace(Chr(9), "\t") & """"
+			End If
+
+			Return mRetorno
 		End Function
 #End Region
 
@@ -295,6 +314,28 @@ Namespace Misc
 			Else
 				Return ""
 			End If
+		End Function
+#End Region
+
+#Region "NULLABLE TO JSON"
+
+		Public Shared Function NullableToJson(ByVal pNullable As Nullables.INullableType) As String
+			If pNullable.HasValue Then
+				Return CType(pNullable.Value, String)
+			Else
+				Return "null"
+			End If
+		End Function
+#End Region
+
+#Region "SET NULLABLE DECIMALS"
+
+		Public Shared Function SetNullableDecimal(ByVal pDecimal As Nullables.NullableDecimal, ByVal pDecimals As Int32) As Nullables.NullableDecimal
+			Dim mRetorno As Nullables.NullableDecimal = Nullables.NullableDecimal.Default
+			If pDecimal.HasValue Then
+				mRetorno = Math.Round(pDecimal.Value, pDecimals)
+			End If
+			Return mRetorno
 		End Function
 #End Region
 
@@ -342,7 +383,7 @@ Namespace Misc
 			Else
 				If pObject IsNot Nothing Then
 					If pObject.GetType Is GetType(System.String) Then
-						If CType(pObject, String) = "S" Or CType(pObject, String) = "1" Or CType(pObject, String).ToLower = "true" Or CType(pObject, String).ToLower = "on" Then
+						If CType(pObject, String) = "S" OrElse CType(pObject, String) = "1" OrElse CType(pObject, String).ToLower = "true" OrElse CType(pObject, String).ToLower = "on" Then
 							Return True
 						Else
 							Return False
@@ -438,18 +479,92 @@ Namespace Misc
 
 #Region "INT TO ALPHABET"
 
-		Public Shared Function IntToAphabet(ByVal pInt As Int64) As String
-			'93 simbolos
-			' !#$%&'()*+-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+        Public Shared Function IntToAphabet(ByVal pInt As Int64, ByVal pMinLenght As Int32) As String
+            Dim mSimbolos As String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            Dim mStack As New Generic.Stack(Of Char)
+            Do While (pInt > 0)
+                mStack.Push(mSimbolos.Chars(Convert.ToInt32(pInt Mod Convert.ToInt64(mSimbolos.Length))))
+                pInt = Convert.ToInt64(Math.Floor(pInt / Convert.ToInt64(mSimbolos.Length)))
+            Loop
 
-			Dim mSimbolos As String = " !#$%&'()*+-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-			Dim mStack As New Generic.Stack(Of Char)
-			Do While (pInt > 0)
-				mStack.Push(mSimbolos.Chars(Convert.ToInt32(pInt Mod Convert.ToInt64(mSimbolos.Length))))
-				pInt = Convert.ToInt64(Math.Floor(pInt / Convert.ToInt64(mSimbolos.Length)))
-			Loop
+            Return New String(mStack.ToArray()).PadLeft(pMinLenght, Convert.ToChar("A"))
+        End Function
+#End Region
 
-			Return New String(mStack.ToArray())
+#Region "ALPHABET TO INT"
+
+        Public Shared Function AphabetToInt(ByVal pStr As String) As Int32
+            Dim mSimbolos As String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            Dim mRetorno As Int32 = 0
+            Dim mPotencia As Int32 = 1
+            While pStr.Substring(0, 1) = "A"
+                pStr = pStr.Substring(1)
+            End While
+			Dim mArray As String() = System.Text.RegularExpressions.Regex.Split(pStr, "", Nothing, TimeSpan.FromSeconds(__RegexTimeOutSpan))
+			Array.Reverse(mArray)
+            For Each mS As String In mArray
+                If mS <> "" Then
+                    If mPotencia = 1 Then
+                        mRetorno += mSimbolos.IndexOf(mS)
+                    Else
+                        mRetorno += mSimbolos.IndexOf(mS) * Convert.ToInt32(mSimbolos.Length ^ (mPotencia - 1))
+                    End If
+                    mPotencia += 1
+                End If
+            Next
+            Return mRetorno
+        End Function
+#End Region
+
+
+#Region "TO STREAM"
+        Public Shared Shadows Function StringToStream(ByVal pString As String) As System.IO.Stream
+			Dim bytes As Byte() = System.Text.Encoding.ASCII.GetBytes(pString)
+			Return New System.IO.MemoryStream(bytes)
+		End Function
+
+		Public Shared Function FromBase64ToStream(ByVal base64 As String) As System.IO.Stream
+			Dim strBytes As Byte() = Convert.FromBase64String(base64)
+			Return New System.IO.MemoryStream(strBytes)
+		End Function
+
+		Public Shared Function StreamToBase64(ByVal pStream As System.IO.Stream) As String
+			Dim length As Integer = Convert.ToInt32(pStream.Length) - 1
+			Dim strBytes(length) As Byte
+			pStream.Position = 0
+			pStream.Read(strBytes, 0, Convert.ToInt32(pStream.Length))
+			Return Convert.ToBase64String(strBytes)
+		End Function
+#End Region
+
+#Region "STRING FROM/TO BASE64"
+		Public Shared Function ToBase64(ByVal data As String) As String
+			Dim strBytes As Byte() = System.Text.Encoding.ASCII.GetBytes(data)
+			Return Convert.ToBase64String(strBytes)
+		End Function
+
+		Public Shared Function FromBase64(ByVal base64 As String) As String
+			Return System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(base64))
+		End Function
+#End Region
+
+#Region "STRING TO NULLABLE"
+        Public Shared Function StringToNullable(ByVal pString As String) As String
+            If pString Is Nothing OrElse pString = "" Then
+                Return CType(Nothing, String)
+            Else
+                Return pString
+            End If
+        End Function
+#End Region
+
+#Region "TRY TO INT32"
+        Public Shared Function TryToInt32(ByVal pValue As Object) As Int32
+			Dim mResultado As Int32 = 0
+			If pValue IsNot Nothing Then
+				Int32.TryParse(Convert.ToString(pValue), mResultado)
+			End If
+			Return mResultado
 		End Function
 #End Region
 

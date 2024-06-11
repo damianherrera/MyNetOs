@@ -52,10 +52,10 @@ Namespace Misc
 
 #Region "CLEAR CACHE"
 
-    Public Shared Sub ClearCache(ByVal pObject As Object)
-      Cache.ClearCache(pObject)
-    End Sub
+        Public Shared Sub ClearCache(ByVal pObject As Object)
+            Cache.ClearCache(pObject)
+        End Sub
 #End Region
 
-  End Class
+    End Class
 End Namespace
